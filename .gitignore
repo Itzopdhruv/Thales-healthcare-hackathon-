@@ -1,0 +1,24 @@
+# Ignore Python virtual environment
+venv/
+.env
+
+# Ignore bytecode
+__pycache__/
+*.py[cod]
+
+# Ignore database and ChromaDB persistence
+*.sqlite3
+*.db
+chroma_store/
+
+# Ignore logs or temp files
+*.log
+*.tmp
+
+# Ignore IDE settings
+.vscode/
+.idea/
+
+# Mac/Windows OS files
+.DS_Store
+Thumbs.db

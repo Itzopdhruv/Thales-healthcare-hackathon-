@@ -1,7 +1,7 @@
 # test_similarity.py
 
-from vector_search import search_similar_medicines, add_medicine_to_vector_db
-from drug_api import fetch_drug_summary
+from healthAssist.backend.services.vector_search import search_similar_medicines, add_medicine_to_vector_db
+from healthAssist.backend.services.drug_api import fetch_drug_summary
 import time
 
 
