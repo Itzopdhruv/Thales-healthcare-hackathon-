@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List
 from datetime import date
-
+from datetime import datetime
 from backend.db import models
 from backend.db.database import SessionLocal
 from backend.services.vector_search import add_medicine_to_vector_db, delete_medicine_from_vector_db
@@ -102,3 +102,39 @@ def update_medicine(med_id: str, med_update: MedicineSchema, db: Session = Depen
 @router.get("/low-stock", response_model=List[MedicineSchema])
 def get_low_stock(threshold: int = 10, db: Session = Depends(get_db)):
     return db.query(models.Medicine).filter(models.Medicine.quantity <= threshold).all()
+
+
+@router.post("/sell")
+def sell_medicines(payload: dict, db: Session = Depends(get_db)):
+    sold_items = []
+    total_price = 0
+
+    for item in payload.get("medicines", []):
+        name = item["name"]
+        qty = item["quantity"]
+
+        medicine = db.query(models.Medicine).filter(models.Medicine.name == name).first()
+
+        if not medicine:
+            raise HTTPException(status_code=404, detail=f"Medicine {name} not found.")
+        if medicine.quantity < qty:
+            raise HTTPException(status_code=400, detail=f"Insufficient stock for {name}.")
+
+        medicine.quantity -= qty
+        db.commit()
+
+        sold_items.append({
+            "name": name,
+            "quantity": qty,
+            "unit_price": medicine.price,
+            "subtotal": medicine.price * qty
+        })
+        total_price += medicine.price * qty
+
+    return {
+        "invoice": {
+            "items": sold_items,
+            "total": total_price,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+    }

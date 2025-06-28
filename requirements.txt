@@ -18,6 +18,7 @@ durationpy==0.10
 fastapi==0.115.13
 filelock==3.18.0
 flatbuffers==25.2.10
+fpdf==1.7.2
 fsspec==2025.5.1
 gitdb==4.0.12
 GitPython==3.1.44
