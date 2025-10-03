@@ -1,0 +1,44 @@
+{
+  "name": "pharmaassist-mern",
+  "version": "1.0.0",
+  "description": "PharmaAssist - Medicine inventory management system with OCR and vector search (MERN Stack)",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "test": "cd backend && npm test && cd ../frontend && npm test"
+  },
+  "keywords": [
+    "medicine",
+    "inventory",
+    "ocr",
+    "vector-search",
+    "pharmacy",
+    "mern",
+    "react",
+    "nodejs",
+    "mongodb",
+    "express"
+  ],
+  "author": "PharmaAssist Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/pharmaassist-mern.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/pharmaassist-mern/issues"
+  },
+  "homepage": "https://github.com/your-username/pharmaassist-mern#readme"
+}
