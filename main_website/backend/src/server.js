@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 
 // Import routes
 import authRoutes from './routes/auth.js';
+import patientRoutes from './routes/patient.js';
 
 // Load environment variables
 dotenv.config();
@@ -46,14 +47,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // MongoDB connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://dhruv:Dhruv2006@cluster0.k9jzv1l.mongodb.net/aayulink?retryWrites=true&w=majority', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dhruv:Dhruv2006@cluster0.k9jzv1l.mongodb.net/aayulink?retryWrites=true&w=majority';
+    
+    await mongoose.connect(mongoURI, {
+      // Remove deprecated options
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     });
     console.log('✅ MongoDB connected successfully');
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err.message);
     console.log('⚠️  Server will continue without database connection');
+    console.log('💡 To fix: Add your IP address to MongoDB Atlas Network Access');
   }
 };
 
@@ -62,6 +68,7 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/patient', patientRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -92,7 +99,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`🚀 AayuLink Server running on port ${PORT}`);

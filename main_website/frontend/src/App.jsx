@@ -8,6 +8,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminPatientView from './pages/AdminPatientView';
+import PatientRecordViewer from './pages/PatientRecordViewer';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -57,6 +58,14 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <AdminPatientView />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="/patient-viewer" 
+                        element={
+                          <ProtectedRoute>
+                            <PatientRecordViewer />
                           </ProtectedRoute>
                         } 
                       />

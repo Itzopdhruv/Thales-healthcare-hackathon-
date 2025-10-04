@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 import { 
   Layout, 
   Card, 
@@ -23,8 +25,8 @@ import {
   Switch,
   Badge
 } from 'antd';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { patientAPI } from '../services/api';
 import {
   UserOutlined,
   FileTextOutlined,
@@ -62,6 +64,8 @@ const AdminDashboard = () => {
   const [isConsentVisible, setIsConsentVisible] = useState(false);
   const [patientFound, setPatientFound] = useState(null);
   const [consentCode, setConsentCode] = useState('');
+  const [generatedABHAId, setGeneratedABHAId] = useState('');
+  const [isGeneratingABHA, setIsGeneratingABHA] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -257,20 +261,35 @@ const AdminDashboard = () => {
     form.resetFields();
   };
 
-  const handlePatientLookup = (values) => {
-    // Mock patient lookup
-    if (values.abhaNumber === '12-3456-7890-0001') {
-      setPatientFound({
-        name: 'Tanish Kumar',
-        abhaId: '12-3456-7890-0001',
-        age: 20,
-        gender: 'Male',
-        bloodType: 'AB+'
-      });
-      setIsPatientLookupVisible(false);
-      setIsConsentVisible(true);
-    } else {
-      message.error('Patient not found with this ABHA number');
+  const handlePatientLookup = async (values) => {
+    try {
+      const result = await patientAPI.lookupPatient(values.abhaNumber);
+      
+      if (result.success) {
+        const patientData = {
+          name: result.data.patient.name,
+          abhaId: result.data.patient.abhaId,
+          age: result.data.patient.profile?.dateOfBirth ? 
+            new Date().getFullYear() - new Date(result.data.patient.profile.dateOfBirth).getFullYear() : 'N/A',
+          gender: result.data.patient.profile?.gender || 'N/A',
+          bloodType: result.data.patient.profile?.bloodType || 'N/A',
+          email: result.data.patient.email,
+          phone: result.data.patient.phone,
+          healthRecords: result.data.healthRecords
+        };
+        
+        setPatientFound(patientData);
+        setIsPatientLookupVisible(false);
+        
+        // Navigate to patient record viewer
+        navigate('/patient-viewer', { state: { patientData, abhaId: values.abhaNumber } });
+        message.success('Patient found! Opening detailed view...');
+      } else {
+        message.error(result.error || 'Patient not found with this ABHA number');
+      }
+    } catch (error) {
+      console.error('Error looking up patient:', error);
+      message.error(error.error || 'Failed to lookup patient');
     }
   };
 
@@ -285,9 +304,133 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleCreatePatient = (values) => {
-    message.success('Patient record created successfully!');
-    setIsCreatePatientVisible(false);
+  const handleGenerateABHA = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      setIsGeneratingABHA(true);
+      const result = await patientAPI.generateABHAId();
+      
+      if (result.success) {
+        const abhaId = result.data.abhaId;
+        setGeneratedABHAId(abhaId);
+        // Update the form field value
+        form.setFieldsValue({ abhaId: abhaId });
+        message.success(`ABHA ID generated successfully: ${abhaId}`);
+      } else {
+        message.error(result.error || 'Failed to generate ABHA ID');
+      }
+    } catch (error) {
+      console.error('Error generating ABHA ID:', error);
+      message.error(error.error || 'Failed to generate ABHA ID');
+    } finally {
+      setIsGeneratingABHA(false);
+    }
+  };
+
+  const handleCopyABHA = () => {
+    const abhaId = form.getFieldValue('abhaId') || generatedABHAId;
+    if (abhaId) {
+      navigator.clipboard.writeText(abhaId).then(() => {
+        message.success('ABHA ID copied to clipboard!');
+      }).catch(() => {
+        message.error('Failed to copy ABHA ID');
+      });
+    } else {
+      message.warning('No ABHA ID to copy. Please generate one first.');
+    }
+  };
+
+  const handleAutoFillTestData = () => {
+    // Completely different approach - no event handling
+    const timestamp = Date.now();
+    const testData = {
+      fullName: "John Doe",
+      age: 30,
+      gender: "male",
+      dateOfBirth: dayjs("1994-01-15"), // Use dayjs object for DatePicker
+      bloodType: "O+",
+      phoneNumber: `987654${timestamp.toString().slice(-4)}`, // Make phone unique
+      email: `john.doe.${timestamp}@example.com`, // Make email unique
+      emergencyContact: "Jane Doe 9876543211",
+      street: "123 Main Street",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400001",
+      allergies: "None",
+      medicalConditions: "None",
+      medications: "None"
+    };
+
+    // Use a different method to set form values
+    try {
+      if (form) {
+        // Set values using a different approach
+        form.setFieldsValue(testData);
+        message.success('Test data filled successfully!');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      message.error('Failed to fill test data');
+    }
+  };
+
+  const handleCreatePatient = async (values) => {
+    try {
+      console.log('Form values received:', values);
+      
+      // Validate required fields
+      if (!values.fullName || !values.age || !values.gender || !values.dateOfBirth || !values.phoneNumber) {
+        message.error('Please fill in all required fields');
+        return;
+      }
+
+      // Prepare patient data for API
+      const patientData = {
+        fullName: values.fullName,
+        age: parseInt(values.age),
+        gender: values.gender,
+        dateOfBirth: values.dateOfBirth?.format ? values.dateOfBirth.format('YYYY-MM-DD') : values.dateOfBirth,
+        bloodType: values.bloodType || '',
+        phoneNumber: values.phoneNumber,
+        emergencyContact: values.emergencyContact || '',
+        allergies: values.allergies || '',
+        medicalConditions: values.medicalConditions || '',
+        medications: values.medications || '',
+        email: values.email || '',
+        address: {
+          street: values.street || '',
+          city: values.city || '',
+          state: values.state || '',
+          pincode: values.pincode || '',
+          country: 'India'
+        }
+      };
+
+      console.log('Creating patient with data:', patientData);
+      message.loading('Creating patient record...', 0);
+
+      // Call the API to create patient with ABHA ID
+      const result = await patientAPI.createPatientWithABHA(patientData);
+      
+      message.destroy(); // Clear loading message
+      
+      if (result.success) {
+        message.success(`Patient record created successfully! ABHA ID: ${result.data.abhaId}`);
+        setIsCreatePatientVisible(false);
+        
+        // Reset form and clear generated ABHA ID
+        form.resetFields();
+        setGeneratedABHAId('');
+      } else {
+        message.error(result.error || 'Failed to create patient record');
+      }
+    } catch (error) {
+      message.destroy(); // Clear loading message
+      console.error('Error creating patient:', error);
+      message.error(error.error || 'Failed to create patient record');
+    }
   };
 
   const handleLogout = () => {
@@ -813,7 +956,7 @@ const AdminDashboard = () => {
             >
               <Input
                 prefix={<UserOutlined />}
-                placeholder="e.g., 12-3456-7890-0001"
+                placeholder="e.g., 12-34-56-78"
                 size="large"
               />
             </Form.Item>
@@ -954,19 +1097,44 @@ const AdminDashboard = () => {
           onFinish={handleCreatePatient}
           layout="vertical"
           className="create-patient-form"
+          form={form}
+          key="create-patient-form"
         >
           <div className="form-section">
             <Title level={4}>Authorization & Patient ID</Title>
-            <Form.Item name="authorization" initialValue="sih">
-              <Input placeholder="sih" />
+            <Form.Item 
+              name="authorization" 
+              label="Authorization"
+              initialValue="sih"
+            >
+              <Input placeholder="Enter authorization code" />
             </Form.Item>
-            <Form.Item name="abhaId" initialValue="49-3156-8796-5762">
+            <Form.Item 
+              name="abhaId" 
+              label="ABHA ID"
+              initialValue=""
+            >
               <Input 
-                placeholder="49-3156-8796-5762"
+                placeholder="Click Generate to create ABHA ID (XX-XX-XX-XX)"
                 addonAfter={
                   <Space>
-                    <Button size="small" icon={<CalendarOutlined />}>Generate</Button>
-                    <Button size="small" icon={<CreditCardOutlined />}>Copy</Button>
+                    <Button 
+                      size="small" 
+                      icon={<CalendarOutlined />}
+                      onClick={handleGenerateABHA}
+                      loading={isGeneratingABHA}
+                      htmlType="button"
+                    >
+                      Generate
+                    </Button>
+                    <Button 
+                      size="small" 
+                      icon={<CreditCardOutlined />}
+                      onClick={handleCopyABHA}
+                      htmlType="button"
+                    >
+                      Copy
+                    </Button>
                   </Space>
                 }
               />
@@ -974,17 +1142,60 @@ const AdminDashboard = () => {
           </div>
 
           <div className="form-section">
-            <Title level={4}>Personal Information</Title>
-            <Form.Item name="fullName" rules={[{ required: true }]}>
-              <Input placeholder="Full Name" />
+            <div className="section-header">
+              <Title level={4}>Personal Information</Title>
+              <div 
+                onClick={handleAutoFillTestData}
+                style={{
+                  display: 'inline-block',
+                  padding: '6px 16px',
+                  backgroundColor: '#52c41a',
+                  color: 'white',
+                  border: '1px solid #52c41a',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  userSelect: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#73d13d';
+                  e.target.style.borderColor = '#73d13d';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#52c41a';
+                  e.target.style.borderColor = '#52c41a';
+                }}
+              >
+                <UserAddOutlined style={{ marginRight: '6px' }} />
+                Auto Fill Test Data
+              </div>
+            </div>
+            <Form.Item 
+              name="fullName" 
+              label="Full Name"
+              rules={[{ required: true, message: 'Please enter full name' }]}
+            >
+              <Input placeholder="Enter full name" />
             </Form.Item>
             
             <Space.Compact style={{ width: '100%' }}>
-              <Form.Item name="age" rules={[{ required: true }]} style={{ width: '50%' }}>
-                <Input placeholder="Age" />
+              <Form.Item 
+                name="age" 
+                label="Age"
+                rules={[{ required: true, message: 'Please enter age' }]} 
+                style={{ width: '50%' }}
+              >
+                <Input placeholder="Enter age" type="number" />
               </Form.Item>
-              <Form.Item name="gender" rules={[{ required: true }]} style={{ width: '50%' }}>
-                <Select placeholder="Gender">
+              <Form.Item 
+                name="gender" 
+                label="Gender"
+                rules={[{ required: true, message: 'Please select gender' }]} 
+                style={{ width: '50%' }}
+              >
+                <Select placeholder="Select gender">
                   <Select.Option value="male">Male</Select.Option>
                   <Select.Option value="female">Female</Select.Option>
                   <Select.Option value="other">Other</Select.Option>
@@ -993,33 +1204,102 @@ const AdminDashboard = () => {
             </Space.Compact>
 
             <Space.Compact style={{ width: '100%' }}>
-              <Form.Item name="dateOfBirth" rules={[{ required: true }]} style={{ width: '50%' }}>
-                <DatePicker placeholder="dd/mm/yyyy" style={{ width: '100%' }} />
+              <Form.Item 
+                name="dateOfBirth" 
+                label="Date of Birth"
+                rules={[{ required: true, message: 'Please select date of birth' }]} 
+                style={{ width: '50%' }}
+              >
+                <DatePicker placeholder="Select date" style={{ width: '100%' }} />
               </Form.Item>
-              <Form.Item name="bloodType" style={{ width: '50%' }}>
-                <Input placeholder="Blood Type (e.g., AB+)" />
+              <Form.Item 
+                name="bloodType" 
+                label="Blood Type"
+                style={{ width: '50%' }}
+              >
+                <Input placeholder="e.g., AB+" />
               </Form.Item>
             </Space.Compact>
 
-            <Form.Item name="phoneNumber" rules={[{ required: true }]}>
-              <Input placeholder="Personal Phone Number" />
+            <Form.Item 
+              name="phoneNumber" 
+              label="Phone Number"
+              rules={[{ required: true, message: 'Please enter phone number' }]}
+            >
+              <Input placeholder="Enter 10-digit phone number" />
             </Form.Item>
             
-            <Form.Item name="emergencyContact">
-              <Input placeholder="Emergency Contact (Name & Number)" />
+            <Form.Item 
+              name="email" 
+              label="Email Address"
+            >
+              <Input placeholder="Enter email address (optional)" />
+            </Form.Item>
+            
+            <Form.Item 
+              name="emergencyContact" 
+              label="Emergency Contact"
+            >
+              <Input placeholder="Name & Phone Number" />
             </Form.Item>
           </div>
 
           <div className="form-section">
+            <Title level={4}>Address Information</Title>
+            <Space.Compact style={{ width: '100%' }}>
+              <Form.Item 
+                name="street" 
+                label="Street Address"
+                style={{ width: '70%' }}
+              >
+                <Input placeholder="Enter street address" />
+              </Form.Item>
+              <Form.Item 
+                name="pincode" 
+                label="Pincode"
+                style={{ width: '30%' }}
+              >
+                <Input placeholder="Enter pincode" />
+              </Form.Item>
+            </Space.Compact>
+            
+            <Space.Compact style={{ width: '100%' }}>
+              <Form.Item 
+                name="city" 
+                label="City"
+                style={{ width: '50%' }}
+              >
+                <Input placeholder="Enter city" />
+              </Form.Item>
+              <Form.Item 
+                name="state" 
+                label="State"
+                style={{ width: '50%' }}
+              >
+                <Input placeholder="Enter state" />
+              </Form.Item>
+            </Space.Compact>
+          </div>
+
+          <div className="form-section">
             <Title level={4}>Critical Health Info</Title>
-            <Form.Item name="allergies">
-              <Input.TextArea placeholder="Known Allergies" rows={3} />
+            <Form.Item 
+              name="allergies" 
+              label="Known Allergies"
+            >
+              <Input.TextArea placeholder="Enter any known allergies" rows={3} />
             </Form.Item>
-            <Form.Item name="medicalConditions">
-              <Input.TextArea placeholder="Existing Medical Conditions" rows={3} />
+            <Form.Item 
+              name="medicalConditions" 
+              label="Existing Medical Conditions"
+            >
+              <Input.TextArea placeholder="Enter any existing medical conditions" rows={3} />
             </Form.Item>
-            <Form.Item name="medications">
-              <Input.TextArea placeholder="Current Medications" rows={3} />
+            <Form.Item 
+              name="medications" 
+              label="Current Medications"
+            >
+              <Input.TextArea placeholder="Enter current medications" rows={3} />
             </Form.Item>
           </div>
 

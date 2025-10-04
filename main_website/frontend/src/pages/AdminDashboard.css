@@ -1,4 +1,31 @@
 /* Admin Dashboard Styles */
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header .ant-typography {
+  margin-bottom: 0 !important;
+}
+
+.auto-fill-button {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border-color: #52c41a;
+  color: white;
+  font-weight: 500;
+}
+
+.auto-fill-button:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #95de64 100%);
+  border-color: #73d13d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
 .admin-dashboard {
   min-height: 100vh;
   background: #f5f7fa;
@@ -319,10 +346,33 @@
   height: 45px;
   font-size: 16px;
   font-weight: 600;
-  background: #ff4d4f;
-  border-color: #ff4d4f;
   border-radius: 8px;
   margin-bottom: 16px;
+  background: #ff7875 !important;
+  border-color: #ff7875 !important;
+  color: white !important;
+}
+
+.emergency-button span,
+.emergency-button .anticon,
+.emergency-button .ant-btn-icon {
+  color: white !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.emergency-button:hover {
+  background: #ffa39e !important;
+  border-color: #ffa39e !important;
+  color: white !important;
+}
+
+.emergency-button:hover span,
+.emergency-button:hover .anticon,
+.emergency-button:hover .ant-btn-icon {
+  color: white !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 .lookup-another-link {

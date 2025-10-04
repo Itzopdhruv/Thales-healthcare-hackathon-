@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, message, Tabs, Divider, Select, Radio, Modal, DatePicker, Space } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, CreditCardOutlined, MedicineBoxOutlined, CalendarOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Form, Input, Button, Card, Typography, message, Tabs, Divider, Select, Radio, Modal, DatePicker, Space, Progress, Spin } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, CreditCardOutlined, MedicineBoxOutlined, CalendarOutlined, SearchOutlined, PlusOutlined, CheckCircleOutlined, LoadingOutlined, RocketOutlined, StarOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
@@ -15,21 +15,62 @@ const Login = () => {
   const [isConsentVisible, setIsConsentVisible] = useState(false);
   const [patientFound, setPatientFound] = useState(null);
   const [consentCode, setConsentCode] = useState('');
+  
+  // Enhanced interactive states
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [loginProgress, setLoginProgress] = useState(0);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [showImage, setShowImage] = useState(false);
+  const [particleCount, setParticleCount] = useState(0);
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [inputFocus, setInputFocus] = useState('');
+  
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
   const onLogin = async (values) => {
+    // Start the stunning transition sequence
+    setIsTransitioning(true);
+    setLoginProgress(0);
+    setParticleCount(50); // Start particle animation
+    
+    // Simulate progressive loading with visual feedback
+    const progressInterval = setInterval(() => {
+      setLoginProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+
     setLoading(true);
     const loginData = {
-      email: values.email || values.username + '@example.com', // Use email if provided, otherwise generate from username
+      email: values.email || values.username + '@example.com',
       password: values.password
     };
+    
     const result = await login(loginData);
-    setLoading(false);
+    
+    // Complete the progress bar
+    setLoginProgress(100);
+    clearInterval(progressInterval);
     
     if (result.success) {
+      // Show success animation
+      setShowSuccessAnimation(true);
+      setShowImage(true); // Trigger image slide-in
+      
+      // Create particle burst effect
+      setParticleCount(100);
+      
+      setTimeout(() => {
       message.success('Login successful!');
-      // Redirect based on active tab for now, will be improved with user role
+        setShowSuccessAnimation(false);
+        setIsTransitioning(false);
+        
+        // Navigate based on role
       if (activeTab === 'admin') {
         navigate('/admin-dashboard');
       } else if (activeTab === 'doctor') {
@@ -37,9 +78,17 @@ const Login = () => {
       } else {
         navigate('/patient-dashboard');
       }
+      }, 2000);
     } else {
+      // Reset states on error
+      setIsTransitioning(false);
+      setLoginProgress(0);
+      setShowImage(false);
+      setParticleCount(0);
       message.error(result.error);
     }
+    
+    setLoading(false);
   };
 
   const onRegister = async (values) => {
@@ -128,8 +177,11 @@ const Login = () => {
               ]}
             >
               <Input
-                prefix={<MailOutlined />}
+                prefix={<MailOutlined className={`input-icon ${inputFocus === 'email' ? 'focused' : ''}`} />}
                 placeholder="Enter your email"
+                onFocus={() => setInputFocus('email')}
+                onBlur={() => setInputFocus('')}
+                className={`enhanced-input ${inputFocus === 'email' ? 'focused' : ''}`}
               />
             </Form.Item>
 
@@ -138,8 +190,11 @@ const Login = () => {
               rules={[{ required: true, message: 'Please input your password!' }]}
             >
               <Input.Password
-                prefix={<LockOutlined />}
+                prefix={<LockOutlined className={`input-icon ${inputFocus === 'password' ? 'focused' : ''}`} />}
                 placeholder="Enter your password"
+                onFocus={() => setInputFocus('password')}
+                onBlur={() => setInputFocus('')}
+                className={`enhanced-input ${inputFocus === 'password' ? 'focused' : ''}`}
               />
             </Form.Item>
 
@@ -149,9 +204,14 @@ const Login = () => {
                 htmlType="submit"
                 loading={loading}
                 block
-                className="login-button"
+                className={`login-button ${isTransitioning ? 'processing' : ''}`}
+                disabled={isTransitioning}
               >
-                Login
+                {isTransitioning ? (
+                  <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
+                ) : (
+                  'Login'
+                )}
               </Button>
             </Form.Item>
           </Form>
@@ -184,8 +244,11 @@ const Login = () => {
               ]}
             >
               <Input
-                prefix={<MailOutlined />}
+                prefix={<MailOutlined className={`input-icon ${inputFocus === 'email' ? 'focused' : ''}`} />}
                 placeholder="Enter your email"
+                onFocus={() => setInputFocus('email')}
+                onBlur={() => setInputFocus('')}
+                className={`enhanced-input ${inputFocus === 'email' ? 'focused' : ''}`}
               />
             </Form.Item>
 
@@ -194,8 +257,11 @@ const Login = () => {
               rules={[{ required: true, message: 'Please input your password!' }]}
             >
               <Input.Password
-                prefix={<LockOutlined />}
+                prefix={<LockOutlined className={`input-icon ${inputFocus === 'password' ? 'focused' : ''}`} />}
                 placeholder="Enter your password"
+                onFocus={() => setInputFocus('password')}
+                onBlur={() => setInputFocus('')}
+                className={`enhanced-input ${inputFocus === 'password' ? 'focused' : ''}`}
               />
             </Form.Item>
 
@@ -205,9 +271,14 @@ const Login = () => {
                 htmlType="submit"
                 loading={loading}
                 block
-                className="login-button"
+                className={`login-button ${isTransitioning ? 'processing' : ''}`}
+                disabled={isTransitioning}
               >
-                Login
+                {isTransitioning ? (
+                  <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
+                ) : (
+                  'Login'
+                )}
               </Button>
             </Form.Item>
           </Form>
@@ -220,12 +291,98 @@ const Login = () => {
           </div>
         </div>
       )
-    },
-    {
-      key: 'register-individual',
-      label: 'Individual',
-      children: (
-        <div>
+    }
+  ];
+
+  return (
+    <div className="login-container">
+      {/* Animated Background Particles */}
+      <div className="particles-container">
+        {Array.from({ length: particleCount }).map((_, i) => (
+          <div
+            key={i}
+            className={`particle particle-${i}`}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${2 + Math.random() * 3}s`
+            }}
+          />
+        ))}
+      </div>
+
+      <Card className={`login-card ${isTransitioning ? 'transitioning' : ''} ${showSuccessAnimation ? 'success' : ''}`}>
+        {/* Success Animation Overlay */}
+        {showSuccessAnimation && (
+          <div className="success-overlay">
+            <div className="success-icon">
+              <CheckCircleOutlined />
+            </div>
+            <div className="success-text">Welcome to AayuLink!</div>
+            <div className="success-subtitle">Connecting you to better healthcare</div>
+          </div>
+        )}
+
+        {/* Progress Bar */}
+        {isTransitioning && (
+          <div className="login-progress">
+            <Progress
+              percent={loginProgress}
+              strokeColor={{
+                '0%': '#108ee9',
+                '100%': '#87d068',
+              }}
+              trailColor="#f0f0f0"
+              strokeWidth={4}
+              showInfo={false}
+            />
+            <div className="progress-text">
+              {loginProgress < 30 ? 'Authenticating...' : 
+               loginProgress < 60 ? 'Loading your profile...' : 
+               loginProgress < 90 ? 'Preparing dashboard...' : 
+               'Almost there...'}
+            </div>
+          </div>
+        )}
+
+        <div className="login-header">
+          <Title level={2} className="login-title">
+            <span className="title-main">Aayu</span>
+            <span className="title-accent">Link</span>
+            {showSuccessAnimation && <RocketOutlined className="title-rocket" />}
+          </Title>
+          {showSuccessAnimation && (
+            <div className="welcome-stars">
+              <StarOutlined className="star star-1" />
+              <StarOutlined className="star star-2" />
+              <StarOutlined className="star star-3" />
+            </div>
+          )}
+        </div>
+
+        {/* Sliding Image Integration */}
+        <div className={`image-slide-container ${showImage ? 'show' : ''}`}>
+          <div className="slide-image">
+            <div className="image-placeholder">
+              <MedicineBoxOutlined className="image-icon" />
+              <div className="image-text">Healthcare Connected</div>
+            </div>
+          </div>
+        </div>
+
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={tabItems}
+          className={`login-tabs ${isTransitioning ? 'fade-out' : ''}`}
+          centered
+          size="large"
+        />
+
+        {/* Registration Forms */}
+        {activeTab === 'register-individual' && (
+          <div className="registration-form">
           <Form
             name="register-individual"
             onFinish={onRegister}
@@ -321,13 +478,10 @@ const Login = () => {
             </Button>
           </div>
         </div>
-      )
-    },
-    {
-      key: 'register-admin',
-      label: 'Admin',
-      children: (
-        <div>
+        )}
+
+        {activeTab === 'register-admin' && (
+          <div className="registration-form">
           <Form
             name="register-admin"
             onFinish={onRegister}
@@ -443,25 +597,7 @@ const Login = () => {
             </Button>
           </div>
         </div>
-      )
-    }
-  ];
-
-  return (
-    <div className="login-container">
-      <Card className="login-card">
-        <div className="login-header">
-          <Title level={2} className="login-title">
-            AayuLink
-          </Title>
-        </div>
-
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
-          className="login-tabs"
-        />
+        )}
 
         <Divider className="login-divider">
           <Text type="secondary" className="divider-text">

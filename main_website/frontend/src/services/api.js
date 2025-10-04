@@ -34,4 +34,51 @@ api.interceptors.response.use(
   }
 );
 
+// Patient API functions
+export const patientAPI = {
+  // Create patient with ABHA ID
+  createPatientWithABHA: async (patientData) => {
+    try {
+      console.log('Sending patient data to API:', patientData);
+      const response = await api.post('/patient/create-with-abha', patientData);
+      console.log('API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('API error:', error);
+      console.error('Error response:', error.response?.data);
+      throw error.response?.data || { success: false, error: 'Failed to create patient' };
+    }
+  },
+
+  // Generate ABHA ID only
+  generateABHAId: async () => {
+    try {
+      const response = await api.get('/patient/generate-abha');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, error: 'Failed to generate ABHA ID' };
+    }
+  },
+
+  // Lookup patient by ABHA ID
+  lookupPatient: async (abhaId) => {
+    try {
+      const response = await api.get(`/patient/lookup/${abhaId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, error: 'Failed to lookup patient' };
+    }
+  },
+
+  // Update patient record
+  updatePatient: async (abhaId, updateData) => {
+    try {
+      const response = await api.put(`/patient/update/${abhaId}`, updateData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, error: 'Failed to update patient' };
+    }
+  }
+};
+
 export default api;
