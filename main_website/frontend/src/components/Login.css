@@ -1,0 +1,290 @@
+/* Login Component Styles */
+.login-container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 15px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: none;
+  padding: 0;
+}
+
+.login-header {
+  text-align: center;
+  padding: 30px 30px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.login-title {
+  color: #1890ff;
+  margin-bottom: 0 !important;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+}
+
+.login-tabs {
+  padding: 0 30px;
+}
+
+.login-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.login-tabs .ant-tabs-tab {
+  padding: 12px 24px;
+  font-weight: 500;
+  border-radius: 8px 8px 0 0;
+  margin-right: 4px;
+}
+
+.login-tabs .ant-tabs-tab-active {
+  background: #f0f9ff;
+  border-color: #1890ff;
+}
+
+.login-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.login-button,
+.signup-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #52c41a;
+  border-color: #52c41a;
+}
+
+.login-button:hover,
+.signup-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+.register-link,
+.login-link {
+  text-align: center;
+  margin-top: 16px;
+  padding: 16px 0;
+}
+
+.register-link .ant-btn-link,
+.login-link .ant-btn-link {
+  color: #52c41a;
+  font-weight: 500;
+  padding: 0;
+}
+
+.login-divider {
+  margin: 20px 30px;
+}
+
+.divider-text {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* Patient Lookup Modal */
+.patient-lookup-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.patient-lookup-content {
+  text-align: center;
+}
+
+.lookup-instruction {
+  display: block;
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.lookup-form {
+  margin-bottom: 24px;
+}
+
+.find-patient-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.find-patient-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+.create-abha-link {
+  color: #1890ff;
+  font-weight: 500;
+  text-decoration: underline;
+  padding: 0;
+  height: auto;
+}
+
+/* Patient Found Modal */
+.patient-found-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.patient-found-content {
+  text-align: center;
+}
+
+.patient-info {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.patient-name {
+  color: #52c41a !important;
+  margin-bottom: 8px !important;
+  font-size: 24px;
+}
+
+.patient-abha {
+  color: #666;
+  font-size: 16px;
+}
+
+.medical-history-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.emergency-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.lookup-another-link {
+  color: #1890ff;
+  font-weight: 500;
+  padding: 0;
+  height: auto;
+}
+
+/* Consent Modal */
+.consent-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.consent-content {
+  text-align: center;
+}
+
+.consent-icon {
+  font-size: 48px;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+.consent-description {
+  display: block;
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.send-otp-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+}
+
+/* Create Patient Modal */
+.create-patient-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.create-patient-form {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.form-section .ant-typography {
+  margin-bottom: 16px !important;
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.create-patient-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.create-patient-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+  
+  .login-header {
+    padding: 20px 20px 15px;
+  }
+  
+  .login-tabs {
+    padding: 0 20px;
+  }
+  
+  .login-divider {
+    margin: 15px 20px;
+  }
+  
+  .create-patient-modal {
+    width: 95% !important;
+  }
+  
+  .form-section {
+    padding: 15px;
+  }
+}
