@@ -1,0 +1,822 @@
+/* Enhanced Login Component Styles */
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated Background Particles */
+.particles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: floatUp 3s infinite ease-in-out;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(1);
+    opacity: 0;
+  }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 2;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 20px;
+  z-index: -1;
+}
+
+.login-card.transitioning {
+  transform: scale(1.02);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.login-card.success {
+  transform: scale(1.05);
+  box-shadow: 0 35px 70px rgba(76, 175, 80, 0.3);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%);
+}
+
+.login-header {
+  text-align: center;
+  padding: 30px 30px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.login-title {
+  color: #1890ff;
+  margin-bottom: 0 !important;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  position: relative;
+  display: inline-block;
+}
+
+.title-main {
+  color: #1890ff;
+  transition: all 0.3s ease;
+}
+
+.title-accent {
+  color: #52c41a;
+  transition: all 0.3s ease;
+}
+
+.title-rocket {
+  margin-left: 10px;
+  color: #ff6b6b;
+  animation: rocketLaunch 2s ease-in-out;
+}
+
+@keyframes rocketLaunch {
+  0% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(20px) rotate(10deg);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+}
+
+.welcome-stars {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 40px;
+}
+
+.star {
+  position: absolute;
+  color: #ffd700;
+  font-size: 20px;
+  animation: twinkle 1.5s infinite ease-in-out;
+}
+
+.star-1 {
+  left: 20px;
+  animation-delay: 0s;
+}
+
+.star-2 {
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0.5s;
+}
+
+.star-3 {
+  right: 20px;
+  animation-delay: 1s;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Success Animation Overlay */
+.success-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(139, 195, 74, 0.9) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 20px;
+  animation: successSlideIn 0.8s ease-out;
+  pointer-events: none;
+}
+
+@keyframes successSlideIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.success-icon {
+  font-size: 80px;
+  color: white;
+  margin-bottom: 20px;
+  animation: successBounce 1s ease-out;
+}
+
+@keyframes successBounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.success-text {
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.success-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+/* Progress Bar */
+.login-progress {
+  padding: 20px 30px;
+  background: rgba(240, 240, 240, 0.8);
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.progress-text {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Image Slide Animation */
+.image-slide-container {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.1) 0%, rgba(82, 196, 26, 0.1) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.image-slide-container.show {
+  left: 0;
+}
+
+.slide-image {
+  text-align: center;
+  color: #1890ff;
+}
+
+.image-placeholder {
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px dashed #1890ff;
+  border-radius: 16px;
+  padding: 40px;
+  margin: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(24, 144, 255, 0.2);
+  animation: imageSlideIn 0.8s ease-out;
+}
+
+@keyframes imageSlideIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.image-icon {
+  font-size: 64px;
+  color: #1890ff;
+  margin-bottom: 16px;
+  display: block;
+  animation: iconPulse 2s infinite ease-in-out;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.image-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.login-tabs {
+  padding: 0 30px;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.login-tabs.fade-out {
+  opacity: 0.3;
+  transform: scale(0.98);
+}
+
+.login-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.login-tabs .ant-tabs-nav-list {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-tabs .ant-tabs-nav {
+  margin-bottom: 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.login-tabs .ant-tabs-tab {
+  flex: 1;
+  text-align: center;
+  padding: 16px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 0;
+  margin-right: 0;
+  transition: all 0.3s ease;
+  min-width: 0;
+  max-width: 50%;
+  position: relative;
+  border-bottom: 3px solid transparent;
+  color: #666;
+  cursor: pointer;
+}
+
+.login-tabs .ant-tabs-tab:hover {
+  color: #1890ff;
+}
+
+.login-tabs .ant-tabs-tab-active {
+  color: #1890ff !important;
+  background: transparent !important;
+  border-bottom: 3px solid #1890ff !important;
+  font-weight: 700 !important;
+}
+
+.login-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1890ff !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+}
+
+/* Enhanced tab text styling */
+.login-tabs .ant-tabs-tab-btn {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.5px;
+}
+
+.login-tabs .ant-tabs-tab-btn:hover {
+  transform: translateY(-1px);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Fix dropdown positioning issues */
+.login-tabs .ant-tabs-dropdown {
+  z-index: 1000 !important;
+  position: fixed !important;
+}
+
+.login-tabs .ant-tabs-dropdown-menu {
+  z-index: 1001 !important;
+  position: relative !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 8px !important;
+  border: 1px solid #e8e8e8 !important;
+  background: white !important;
+}
+
+.login-tabs .ant-tabs-dropdown-menu-item {
+  padding: 8px 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+.login-tabs .ant-tabs-dropdown-menu-item:hover {
+  background: #f5f5f5 !important;
+}
+
+.login-tabs .ant-tabs-dropdown-menu-item-active {
+  background: #e6f7ff !important;
+  color: #1890ff !important;
+}
+
+/* Removed old tab styles - using new centered styles above */
+
+/* Prevent tab overflow and dropdown issues */
+.login-tabs .ant-tabs-nav-wrap {
+  overflow: visible !important;
+}
+
+.login-tabs .ant-tabs-nav-list {
+  position: relative;
+  z-index: 1;
+}
+
+.login-tabs .ant-tabs-tab {
+  position: relative;
+  z-index: 1;
+}
+
+/* Fix any potential overflow issues */
+.login-tabs .ant-tabs-content-holder {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure proper stacking context */
+.login-card .ant-card-body {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Registration Form Styles */
+.registration-form {
+  padding: 0 30px;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.registration-form .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.registration-form .ant-input,
+.registration-form .ant-input-password {
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.registration-form .ant-input:focus,
+.registration-form .ant-input-password:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.registration-form .ant-input-prefix {
+  color: #8c8c8c;
+}
+
+.registration-form .signup-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #52c41a;
+  border-color: #52c41a;
+  margin-top: 8px;
+}
+
+.registration-form .signup-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+.registration-form .login-link {
+  text-align: center;
+  margin-top: 16px;
+  padding: 16px 0;
+}
+
+.registration-form .login-link .ant-btn-link {
+  color: #52c41a;
+  font-weight: 500;
+  padding: 0;
+}
+
+/* Enhanced Input Styles */
+.enhanced-input {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  border: 2px solid #e8e8e8;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.enhanced-input:hover {
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.enhanced-input.focused {
+  border-color: #1890ff;
+  box-shadow: 0 6px 20px rgba(24, 144, 255, 0.25);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 1);
+}
+
+.input-icon {
+  transition: all 0.3s ease;
+  color: #8c8c8c;
+}
+
+.input-icon.focused {
+  color: #1890ff;
+  transform: scale(1.1);
+}
+
+/* Enhanced Button Styles */
+.login-button,
+.signup-button {
+  height: 50px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border: none;
+  box-shadow: 0 4px 15px rgba(82, 196, 26, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-button::before,
+.signup-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.login-button:hover,
+.signup-button:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #95de64 100%);
+  box-shadow: 0 6px 20px rgba(82, 196, 26, 0.4);
+  transform: translateY(-2px);
+}
+
+.login-button:hover::before,
+.signup-button:hover::before {
+  left: 100%;
+}
+
+.login-button.processing {
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.login-button:active,
+.signup-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+}
+
+.register-link,
+.login-link {
+  text-align: center;
+  margin-top: 16px;
+  padding: 16px 0;
+}
+
+.register-link .ant-btn-link,
+.login-link .ant-btn-link {
+  color: #52c41a;
+  font-weight: 500;
+  padding: 0;
+}
+
+.login-divider {
+  margin: 20px 30px;
+}
+
+.divider-text {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* Patient Lookup Modal */
+.patient-lookup-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.patient-lookup-content {
+  text-align: center;
+}
+
+.lookup-instruction {
+  display: block;
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.lookup-form {
+  margin-bottom: 24px;
+}
+
+.find-patient-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.find-patient-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+.create-abha-link {
+  color: #1890ff;
+  font-weight: 500;
+  text-decoration: underline;
+  padding: 0;
+  height: auto;
+}
+
+/* Patient Found Modal */
+.patient-found-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.patient-found-content {
+  text-align: center;
+}
+
+.patient-info {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.patient-name {
+  color: #52c41a !important;
+  margin-bottom: 8px !important;
+  font-size: 24px;
+}
+
+.patient-abha {
+  color: #666;
+  font-size: 16px;
+}
+
+.medical-history-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.emergency-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.lookup-another-link {
+  color: #1890ff;
+  font-weight: 500;
+  padding: 0;
+  height: auto;
+}
+
+/* Consent Modal */
+.consent-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.consent-content {
+  text-align: center;
+}
+
+.consent-icon {
+  font-size: 48px;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+.consent-description {
+  display: block;
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.send-otp-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+}
+
+/* Create Patient Modal */
+.create-patient-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.create-patient-form {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.form-section .ant-typography {
+  margin-bottom: 16px !important;
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.create-patient-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.create-patient-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+  
+  .login-header {
+    padding: 20px 20px 15px;
+  }
+  
+  .login-tabs {
+    padding: 0 20px;
+  }
+  
+  .login-divider {
+    margin: 15px 20px;
+  }
+  
+  .create-patient-modal {
+    width: 95% !important;
+  }
+  
+  .form-section {
+    padding: 15px;
+  }
+}

@@ -1,0 +1,299 @@
+/* Doctor Dashboard Styles */
+.doctor-dashboard {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.dashboard-header {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 24px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.logo-aayu {
+  color: #fa8c16;
+  font-size: 28px;
+  margin-right: 4px;
+}
+
+.logo-link {
+  color: #1890ff;
+}
+
+.welcome-text {
+  margin: 0 !important;
+  color: #1f2937;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-sider {
+  background: white;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  left: 0;
+  top: 70px;
+  bottom: 0;
+  z-index: 999;
+}
+
+.sider-content {
+  padding: 24px 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.user-profile {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.user-profile .ant-typography {
+  margin: 8px 0 !important;
+}
+
+.sider-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  text-align: left;
+  height: 48px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.menu-item:hover {
+  background: #f0f9ff;
+  color: #1890ff;
+}
+
+.menu-item.ant-btn-primary {
+  background: #1890ff;
+  color: white;
+}
+
+.emergency-btn {
+  color: #ff4d4f !important;
+  border-color: #ff4d4f !important;
+}
+
+.emergency-btn:hover {
+  background: #fff2f0 !important;
+  border-color: #ff4d4f !important;
+}
+
+.dashboard-content {
+  margin-left: 250px;
+  margin-top: 70px;
+  padding: 24px;
+  min-height: calc(100vh - 70px);
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.patients-card,
+.schedule-card,
+.quick-actions-card,
+.diagnoses-card,
+.analytics-card,
+.emergency-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.card-actions {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.appointment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.appointment-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.appointment-details {
+  flex: 2;
+  margin: 0 16px;
+}
+
+.appointment-status {
+  flex: 1;
+  text-align: right;
+}
+
+.diagnosis-item {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.diagnosis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.diagnosis-details {
+  margin-bottom: 12px;
+}
+
+.diagnosis-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chart-placeholder {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+.chart-placeholder .ant-typography {
+  margin-top: 16px !important;
+  color: #6b7280;
+}
+
+.emergency-option {
+  text-align: center;
+  border-radius: 12px;
+  border: 2px solid #ff4d4f;
+  background: #fff2f0;
+}
+
+.emergency-content {
+  padding: 24px;
+}
+
+.emergency-icon {
+  font-size: 48px;
+  color: #ff4d4f;
+  margin-bottom: 16px;
+}
+
+.emergency-content .ant-typography {
+  margin-bottom: 16px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-sider {
+    display: none;
+  }
+  
+  .dashboard-content {
+    margin-left: 0;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    height: auto;
+    padding: 16px 0;
+  }
+  
+  .header-left {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .stats-row .ant-col {
+    margin-bottom: 16px;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .appointment-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .appointment-details,
+  .appointment-status {
+    margin: 0;
+    text-align: left;
+  }
+  
+  .diagnosis-actions {
+    flex-wrap: wrap;
+  }
+}

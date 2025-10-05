@@ -1,0 +1,489 @@
+/* Admin Dashboard Styles */
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header .ant-typography {
+  margin-bottom: 0 !important;
+}
+
+.auto-fill-button {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border-color: #52c41a;
+  color: white;
+  font-weight: 500;
+}
+
+.auto-fill-button:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #95de64 100%);
+  border-color: #73d13d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
+.admin-dashboard {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.dashboard-header {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 24px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.logo-aayu {
+  color: #fa8c16;
+  font-size: 28px;
+  margin-right: 4px;
+}
+
+.logo-link {
+  color: #1890ff;
+}
+
+.welcome-text {
+  margin: 0 !important;
+  color: #1f2937;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-sider {
+  background: white;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  left: 0;
+  top: 70px;
+  bottom: 0;
+  z-index: 999;
+}
+
+.sider-content {
+  padding: 24px 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.user-profile {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.user-profile .ant-typography {
+  margin: 8px 0 !important;
+}
+
+.sider-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  text-align: left;
+  height: 48px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.menu-item:hover {
+  background: #f0f9ff;
+  color: #1890ff;
+}
+
+.menu-item.ant-btn-primary {
+  background: #1890ff;
+  color: white;
+}
+
+.dashboard-content {
+  margin-left: 250px;
+  margin-top: 70px;
+  padding: 24px;
+  min-height: calc(100vh - 70px);
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.alerts-card,
+.health-card,
+.hospitals-card,
+.users-card,
+.analytics-card,
+.system-card,
+.database-card,
+.security-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.card-actions {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.health-metric {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.db-metric {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.chart-placeholder {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+.chart-placeholder .ant-typography {
+  margin-top: 16px !important;
+  color: #6b7280;
+}
+
+.config-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.security-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Admin Functions Styles */
+.admin-functions-card {
+  margin-top: 24px;
+}
+
+.function-card {
+  text-align: center;
+  padding: 24px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.function-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #1890ff;
+}
+
+.function-icon {
+  font-size: 32px;
+  color: #1890ff;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.function-card .ant-typography {
+  margin-bottom: 8px !important;
+}
+
+/* Patient Lookup Modal */
+.patient-lookup-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.patient-lookup-content {
+  text-align: center;
+}
+
+.lookup-instruction {
+  display: block;
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.lookup-form {
+  margin-bottom: 24px;
+}
+
+.find-patient-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.find-patient-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+.create-abha-link {
+  color: #1890ff;
+  font-weight: 500;
+  text-decoration: underline;
+  padding: 0;
+  height: auto;
+}
+
+/* Patient Found Modal */
+.patient-found-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.patient-found-content {
+  text-align: center;
+}
+
+.patient-info {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.patient-name {
+  color: #52c41a !important;
+  margin-bottom: 8px !important;
+  font-size: 24px;
+}
+
+.patient-abha {
+  color: #666;
+  font-size: 16px;
+}
+
+.medical-history-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.emergency-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #ff7875 !important;
+  border-color: #ff7875 !important;
+  color: white !important;
+}
+
+.emergency-button span,
+.emergency-button .anticon,
+.emergency-button .ant-btn-icon {
+  color: white !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.emergency-button:hover {
+  background: #ffa39e !important;
+  border-color: #ffa39e !important;
+  color: white !important;
+}
+
+.emergency-button:hover span,
+.emergency-button:hover .anticon,
+.emergency-button:hover .ant-btn-icon {
+  color: white !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.lookup-another-link {
+  color: #1890ff;
+  font-weight: 500;
+  padding: 0;
+  height: auto;
+}
+
+/* Consent Modal */
+.consent-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.consent-content {
+  text-align: center;
+}
+
+.consent-icon {
+  font-size: 48px;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+.consent-description {
+  display: block;
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 14px;
+}
+
+.send-otp-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+}
+
+/* Create Patient Modal */
+.create-patient-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.create-patient-form {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.form-section .ant-typography {
+  margin-bottom: 16px !important;
+  color: #1890ff;
+  font-weight: 600;
+}
+
+.create-patient-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.create-patient-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-sider {
+    display: none;
+  }
+  
+  .dashboard-content {
+    margin-left: 0;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    height: auto;
+    padding: 16px 0;
+  }
+  
+  .header-left {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .stats-row .ant-col {
+    margin-bottom: 16px;
+  }
+  
+  .card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .config-item,
+  .security-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+}

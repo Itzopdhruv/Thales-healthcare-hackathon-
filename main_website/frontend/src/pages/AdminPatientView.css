@@ -1,0 +1,295 @@
+/* Admin Patient View Styles */
+.admin-patient-view {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.dashboard-header {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 24px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.logo-aayu {
+  color: #fa8c16;
+  font-size: 28px;
+  margin-right: 4px;
+}
+
+.logo-link {
+  color: #1890ff;
+}
+
+.welcome-text {
+  margin: 0 !important;
+  color: #1f2937;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-sider {
+  background: white;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  left: 0;
+  top: 70px;
+  bottom: 0;
+  z-index: 999;
+}
+
+.sider-content {
+  padding: 24px 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.patient-context {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.patient-context .ant-typography {
+  margin: 8px 0 !important;
+}
+
+.patient-name {
+  color: #52c41a !important;
+  font-weight: 600;
+}
+
+.sider-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  text-align: left;
+  height: 48px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.menu-item:hover {
+  background: #f0f9ff;
+  color: #1890ff;
+}
+
+.menu-item.active {
+  background: #52c41a;
+  color: white;
+}
+
+.menu-item.active:hover {
+  background: #73d13d;
+  color: white;
+}
+
+.dashboard-content {
+  margin-left: 250px;
+  margin-top: 70px;
+  padding: 24px;
+  min-height: calc(100vh - 70px);
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.patient-demo-card,
+.health-visualizer-card,
+.medical-history-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.patient-info {
+  padding: 20px 0;
+}
+
+.patient-info .patient-name {
+  color: #52c41a !important;
+  margin-bottom: 20px !important;
+  font-size: 28px;
+}
+
+.patient-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.contact-info {
+  padding: 20px 0;
+}
+
+.contact-info .ant-typography {
+  margin-bottom: 16px !important;
+  color: #1890ff;
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.health-visualizer-card .ant-card-head {
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.health-category-btn {
+  width: 100%;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.health-category-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.medical-history-card .ant-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.medical-entry {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.entry-details {
+  margin-bottom: 12px;
+  color: #666;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.add-entry-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.add-entry-button {
+  height: 45px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #52c41a;
+  border-color: #52c41a;
+  border-radius: 8px;
+}
+
+.add-entry-button:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-sider {
+    display: none;
+  }
+  
+  .dashboard-content {
+    margin-left: 0;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    height: auto;
+    padding: 16px 0;
+  }
+  
+  .header-left {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .patient-details,
+  .contact-details {
+    gap: 8px;
+  }
+  
+  .detail-item,
+  .contact-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .health-category-btn {
+    height: 50px;
+    font-size: 14px;
+  }
+  
+  .entry-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
