@@ -65,10 +65,18 @@ const userSchema = new mongoose.Schema({
   },
   profile: {
     dateOfBirth: Date,
+    age: Number,
     gender: {
       type: String,
       enum: ['male', 'female', 'other']
     },
+    bloodType: {
+      type: String,
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    },
+    height: Number, // in cm
+    weight: Number, // in kg
+    bmi: Number,
     address: {
       street: String,
       city: String,
@@ -80,6 +88,43 @@ const userSchema = new mongoose.Schema({
       name: String,
       phone: String,
       relationship: String
+    },
+    // Critical health information
+    allergies: [String],
+    medicalConditions: [String],
+    currentMedications: [{
+      name: String,
+      dosage: String,
+      frequency: String,
+      prescribedBy: String,
+      startDate: Date
+    }],
+    // Insurance and identification
+    insuranceProvider: String,
+    insuranceNumber: String,
+    aadharNumber: String,
+    // Emergency information
+    emergencyNotes: String,
+    // Medical preferences
+    preferredLanguage: String,
+    medicalHistory: {
+      surgeries: [{
+        name: String,
+        date: Date,
+        hospital: String,
+        doctor: String
+      }],
+      hospitalizations: [{
+        reason: String,
+        date: Date,
+        duration: Number,
+        hospital: String
+      }],
+      vaccinations: [{
+        name: String,
+        date: Date,
+        nextDue: Date
+      }]
     }
   },
   preferences: {

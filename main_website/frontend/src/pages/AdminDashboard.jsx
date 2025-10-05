@@ -281,9 +281,9 @@ const AdminDashboard = () => {
         setPatientFound(patientData);
         setIsPatientLookupVisible(false);
         
-        // Navigate to patient record viewer
-        navigate('/patient-viewer', { state: { patientData, abhaId: values.abhaNumber } });
-        message.success('Patient found! Opening detailed view...');
+        // Navigate to secure patient viewer with ABHA ID
+        navigate(`/patient/${values.abhaNumber}`);
+        message.success('Patient found! Opening secure patient viewer...');
       } else {
         message.error(result.error || 'Patient not found with this ABHA number');
       }
@@ -386,6 +386,12 @@ const AdminDashboard = () => {
         return;
       }
 
+      // Validate ABHA ID
+      if (!values.abhaId && !generatedABHAId) {
+        message.error('Please generate an ABHA ID before creating the patient');
+        return;
+      }
+
       // Prepare patient data for API
       const patientData = {
         fullName: values.fullName,
@@ -399,6 +405,7 @@ const AdminDashboard = () => {
         medicalConditions: values.medicalConditions || '',
         medications: values.medications || '',
         email: values.email || '',
+        abhaId: values.abhaId || generatedABHAId, // Include the ABHA ID from form or generated state
         address: {
           street: values.street || '',
           city: values.city || '',
@@ -1009,6 +1016,10 @@ const AdminDashboard = () => {
               block
               icon={<CalendarOutlined />}
               className="medical-history-button"
+              onClick={() => {
+                setPatientFound(null);
+                navigate(`/patient/${patientFound?.abhaId}`);
+              }}
             >
               Get Complete Medical History
             </Button>
@@ -1018,6 +1029,10 @@ const AdminDashboard = () => {
               block
               icon={<MedicineBoxOutlined />}
               className="emergency-button"
+              onClick={() => {
+                setPatientFound(null);
+                navigate(`/patient/${patientFound?.abhaId}`);
+              }}
             >
               Quick Details (Emergency Mode)
             </Button>

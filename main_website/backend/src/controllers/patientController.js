@@ -73,6 +73,7 @@ export const createPatientWithABHA = async (req, res) => {
       medicalConditions,
       medications,
       email,
+      abhaId: providedAbhaId,
       address = {}
     } = req.body;
 
@@ -84,8 +85,21 @@ export const createPatientWithABHA = async (req, res) => {
       });
     }
 
-    // Generate unique ABHA ID
-    const abhaId = await generateUniqueABHAId();
+    // Use provided ABHA ID or generate a new one
+    let abhaId;
+    if (providedAbhaId) {
+      // Check if the provided ABHA ID already exists
+      if (await checkABHAIdExists(providedAbhaId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'ABHA ID already exists. Please generate a new one or use a different ID.'
+        });
+      }
+      abhaId = providedAbhaId;
+    } else {
+      // Generate unique ABHA ID if none provided
+      abhaId = await generateUniqueABHAId();
+    }
 
     // Create username from name (replace spaces with underscores and make lowercase)
     const username = fullName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4);
@@ -105,7 +119,9 @@ export const createPatientWithABHA = async (req, res) => {
       isActive: true,
       profile: {
         dateOfBirth: new Date(dateOfBirth),
+        age: parseInt(age),
         gender: gender.toLowerCase(),
+        bloodType: bloodType || 'Not specified',
         address: {
           street: address.street || '',
           city: address.city || '',
@@ -117,7 +133,24 @@ export const createPatientWithABHA = async (req, res) => {
           name: emergencyContact ? emergencyContact.split(' ')[0] : 'Not provided',
           phone: emergencyContact ? emergencyContact.split(' ').slice(1).join(' ') : '',
           relationship: 'Emergency Contact'
-        }
+        },
+        // Critical health information
+        allergies: allergies ? [allergies] : [],
+        medicalConditions: medicalConditions ? [medicalConditions] : [],
+        currentMedications: medications ? [{
+          name: medications,
+          dosage: '',
+          frequency: '',
+          prescribedBy: 'System',
+          startDate: new Date()
+        }] : [],
+        // Medical history
+        medicalHistory: {
+          surgeries: [],
+          hospitalizations: [],
+          vaccinations: []
+        },
+        preferredLanguage: 'en'
       },
       preferences: {
         language: 'en',
@@ -189,8 +222,9 @@ export const createPatientWithABHA = async (req, res) => {
     };
 
     const newHealthRecord = new HealthRecord(healthRecordData);
-    // Temporarily comment out health record creation to isolate issues
-    // await newHealthRecord.save();
+    await newHealthRecord.save();
+    
+    console.log('Health record saved successfully with ID:', newHealthRecord._id);
 
     // Return success response
     res.status(201).json({
@@ -214,6 +248,7 @@ export const createPatientWithABHA = async (req, res) => {
         allergies: allergies || 'None reported',
         medicalConditions: medicalConditions || 'None reported',
         medications: medications || 'None reported',
+        healthRecordId: newHealthRecord._id,
         createdAt: newUser.createdAt
       }
     });

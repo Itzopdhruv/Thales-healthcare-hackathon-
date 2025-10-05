@@ -9,6 +9,11 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminPatientView from './pages/AdminPatientView';
 import PatientRecordViewer from './pages/PatientRecordViewer';
+import SecurePatientViewer from './pages/SecurePatientViewer';
+import SimplePatientViewer from './pages/SimplePatientViewer';
+import TestPatientViewer from './pages/TestPatientViewer';
+import IconTest from './pages/IconTest';
+import ButtonTest from './pages/ButtonTest';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -68,6 +73,26 @@ function App() {
                             <PatientRecordViewer />
                           </ProtectedRoute>
                         } 
+                      />
+                      <Route 
+                        path="/patient/:id" 
+                        element={
+                          <ProtectedRoute>
+                            <SimplePatientViewer />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="/test-patient/:id" 
+                        element={<TestPatientViewer />} 
+                      />
+                      <Route 
+                        path="/icon-test" 
+                        element={<IconTest />} 
+                      />
+                      <Route 
+                        path="/button-test" 
+                        element={<ButtonTest />} 
                       />
                       <Route path="/dashboard" element={<Navigate to="/patient-dashboard" replace />} />
                     </Routes>

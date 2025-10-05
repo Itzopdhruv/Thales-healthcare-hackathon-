@@ -10,6 +10,9 @@ import dotenv from 'dotenv';
 // Import routes
 import authRoutes from './routes/auth.js';
 import patientRoutes from './routes/patient.js';
+import patientAccessRoutes from './routes/patientAccess.js';
+import medicalHistoryRoutes from './routes/medicalHistory.js';
+import prescriptionRoutes from './routes/prescription.js';
 
 // Load environment variables
 dotenv.config();
@@ -33,7 +36,7 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3002',
   credentials: true
 }));
 
@@ -69,6 +72,9 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patient', patientRoutes);
+app.use('/api/patient-access', patientAccessRoutes);
+app.use('/api/medical-history', medicalHistoryRoutes);
+app.use('/api/prescription', prescriptionRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

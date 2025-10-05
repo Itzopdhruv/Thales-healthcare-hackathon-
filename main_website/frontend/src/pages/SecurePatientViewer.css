@@ -1,0 +1,300 @@
+/* Secure Patient Viewer Styles */
+.secure-patient-viewer {
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.patient-profile-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.patient-profile-card .ant-card-head {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.patient-profile-card .ant-card-head-title {
+  color: white;
+  font-weight: 600;
+}
+
+.medical-history-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.medical-history-card .ant-card-head {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.medical-history-card .ant-card-head-title {
+  color: white;
+  font-weight: 600;
+}
+
+.health-record-item {
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+}
+
+.health-record-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.access-required-card {
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.access-required-card .ant-card-body {
+  padding: 48px 24px;
+}
+
+.consent-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.consent-modal .ant-modal-header {
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+}
+
+.consent-modal .ant-modal-title {
+  color: white;
+  text-align: center;
+  font-weight: 600;
+}
+
+.otp-modal .ant-modal-content {
+  border-radius: 12px;
+}
+
+.otp-modal .ant-modal-header {
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+}
+
+.otp-modal .ant-modal-title {
+  color: white;
+  text-align: center;
+  font-weight: 600;
+}
+
+.otp-input {
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.consent-duration-select {
+  border-radius: 8px;
+}
+
+.consent-duration-select .ant-select-selector {
+  border-radius: 8px;
+  border: 2px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.consent-duration-select .ant-select-selector:hover,
+.consent-duration-select .ant-select-focused .ant-select-selector {
+  border-color: #1890ff;
+}
+
+.verify-button {
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+  transition: all 0.3s ease;
+}
+
+.verify-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+}
+
+.send-otp-button {
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.send-otp-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+}
+
+.request-access-button {
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.request-access-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+}
+
+.access-expired-card {
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.access-expired-card .ant-card-body {
+  padding: 48px 24px;
+}
+
+.timeline-item {
+  margin-bottom: 16px;
+}
+
+.health-record-timeline .ant-timeline-item-content {
+  margin-left: 24px;
+}
+
+.patient-info-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.critical-health-section {
+  margin-top: 16px;
+}
+
+.health-tag {
+  margin: 2px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.access-info-tag {
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.patient-name-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.back-button {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .secure-patient-viewer .ant-layout-sider {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+  
+  .secure-patient-viewer .ant-layout-content {
+    margin-left: 0 !important;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .patient-name-header {
+    font-size: 18px;
+  }
+}
+
+/* Loading States */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f0f2f5;
+}
+
+/* Animation for modals */
+.consent-modal .ant-modal-content,
+.otp-modal .ant-modal-content {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom scrollbar for health records */
+.medical-history-card .ant-card-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.medical-history-card .ant-card-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.medical-history-card .ant-card-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.medical-history-card .ant-card-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.medical-history-card .ant-card-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

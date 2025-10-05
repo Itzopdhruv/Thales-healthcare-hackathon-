@@ -1,0 +1,160 @@
+/* Medical History Modal Styling */
+.medical-history-modal .ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e8f4fd;
+}
+
+.medical-history-modal .ant-modal-header {
+  background: linear-gradient(135deg, #f8fbff 0%, #f0f9ff 100%);
+  border-bottom: 1px solid #e8f4fd;
+  padding: 20px 24px;
+  border-radius: 16px 16px 0 0;
+}
+
+.medical-history-modal .ant-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1890ff;
+  text-align: center;
+}
+
+.medical-history-modal .ant-modal-body {
+  padding: 0;
+  background: #fff;
+}
+
+.medical-history-modal .ant-form-item-label > label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.medical-history-modal .ant-input,
+.medical-history-modal .ant-picker,
+.medical-history-modal .ant-select-selector {
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.medical-history-modal .ant-input:focus,
+.medical-history-modal .ant-picker:focus,
+.medical-history-modal .ant-select-focused .ant-select-selector {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.medical-history-modal .ant-input:hover,
+.medical-history-modal .ant-picker:hover,
+.medical-history-modal .ant-select:hover .ant-select-selector {
+  border-color: #40a9ff;
+}
+
+.medical-history-modal .ant-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.medical-history-modal .ant-btn-primary {
+  background: #52c41a;
+  border-color: #52c41a;
+  box-shadow: 0 2px 4px rgba(82, 196, 26, 0.2);
+}
+
+.medical-history-modal .ant-btn-primary:hover {
+  background: #73d13d;
+  border-color: #73d13d;
+  box-shadow: 0 4px 8px rgba(82, 196, 26, 0.3);
+  transform: translateY(-1px);
+}
+
+.medical-history-modal .ant-btn-default {
+  border-color: #d9d9d9;
+  color: #666;
+}
+
+.medical-history-modal .ant-btn-default:hover {
+  border-color: #40a9ff;
+  color: #1890ff;
+}
+
+.medical-history-modal .ant-select-dropdown {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e8f4fd;
+}
+
+.medical-history-modal .ant-select-item {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.medical-history-modal .ant-select-item-option-selected {
+  background-color: #f0f9ff;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.medical-history-modal .ant-picker-dropdown {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Form spacing and layout */
+.medical-history-modal .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.medical-history-modal .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Button container styling */
+.medical-history-modal .button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+  margin: 0 -24px -24px -24px;
+}
+
+/* Input focus states */
+.medical-history-modal .ant-input:focus,
+.medical-history-modal .ant-picker:focus,
+.medical-history-modal .ant-select-focused .ant-select-selector {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1) !important;
+}
+
+/* Textarea specific styling */
+.medical-history-modal .ant-input {
+  padding: 12px;
+  line-height: 1.5;
+}
+
+/* Date picker specific styling */
+.medical-history-modal .ant-picker {
+  width: 100%;
+  height: 40px;
+}
+
+/* Select specific styling */
+.medical-history-modal .ant-select {
+  width: 100%;
+}
+
+.medical-history-modal .ant-select-selector {
+  height: 40px;
+  padding: 0 12px;
+}
+
+.medical-history-modal .ant-select-selection-item {
+  line-height: 38px;
+}

@@ -69,3 +69,88 @@ export const validateProfileUpdate = [
     .isMobilePhone('en-IN')
     .withMessage('Please provide a valid Indian mobile number for emergency contact')
 ];
+
+export const validateVerifyOTP = [
+  body('accessId')
+    .notEmpty()
+    .withMessage('Access ID is required'),
+  
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('OTP must be exactly 6 digits')
+    .isNumeric()
+    .withMessage('OTP must contain only numbers')
+];
+
+export const validateCreateMedicalHistory = [
+  body('abhaId')
+    .notEmpty()
+    .withMessage('ABHA ID is required'),
+  
+  body('entryType')
+    .isIn(['consultation', 'prescription', 'lab_test', 'scan', 'surgery', 'vaccination', 'other'])
+    .withMessage('Invalid entry type'),
+  
+  body('date')
+    .isISO8601()
+    .withMessage('Please provide a valid date'),
+  
+  body('summary')
+    .trim()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Summary must be between 10 and 1000 characters'),
+  
+  body('consultingDoctor')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Consulting doctor name must be between 2 and 100 characters'),
+  
+  body('hospitalClinicName')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Hospital/Clinic name must be between 2 and 100 characters')
+];
+
+export const validateCreatePrescription = [
+  body('abhaId')
+    .notEmpty()
+    .withMessage('ABHA ID is required'),
+  
+  body('issuedDate')
+    .isISO8601()
+    .withMessage('Please provide a valid issued date'),
+  
+  body('doctor.name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Doctor name must be between 2 and 100 characters'),
+  
+  body('hospitalClinic.name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Hospital/Clinic name must be between 2 and 100 characters'),
+  
+  body('diagnosis.primary')
+    .trim()
+    .isLength({ min: 2, max: 200 })
+    .withMessage('Primary diagnosis must be between 2 and 200 characters'),
+  
+  body('medications')
+    .isArray({ min: 1 })
+    .withMessage('At least one medication is required'),
+  
+  body('medications.*.name')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Medication name must be between 2 and 100 characters'),
+  
+  body('medications.*.dosage')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Medication dosage must be between 1 and 50 characters'),
+  
+  body('medications.*.frequency')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Medication frequency must be between 1 and 50 characters')
+];
