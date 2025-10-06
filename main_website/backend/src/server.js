@@ -13,6 +13,7 @@ import patientRoutes from './routes/patient.js';
 import patientAccessRoutes from './routes/patientAccess.js';
 import medicalHistoryRoutes from './routes/medicalHistory.js';
 import prescriptionRoutes from './routes/prescription.js';
+import reportRoutes from './routes/reports.js';
 
 // Load environment variables
 dotenv.config();
@@ -75,6 +76,7 @@ app.use('/api/patient', patientRoutes);
 app.use('/api/patient-access', patientAccessRoutes);
 app.use('/api/medical-history', medicalHistoryRoutes);
 app.use('/api/prescription', prescriptionRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {

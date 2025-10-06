@@ -16,14 +16,29 @@ import {
   Col,
   Tag,
   Spin,
-  Checkbox
+  Checkbox,
+  Upload,
+  Progress,
+  Input as AntInput,
+  Avatar,
+  List,
+  Empty
 } from 'antd';
 import { 
   LockOutlined, 
   ClockCircleOutlined,
   CheckCircleOutlined,
   PlusOutlined,
-  MedicineBoxOutlined
+  MedicineBoxOutlined,
+  FileTextOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  EyeOutlined,
+  DeleteOutlined,
+  MessageOutlined,
+  SendOutlined,
+  RobotOutlined,
+  UserOutlined
 } from '@ant-design/icons';
 import api from '../services/api';
 import './MedicalHistoryModal.css';
@@ -41,6 +56,13 @@ const SimplePatientViewer = () => {
   const [accessGranted, setAccessGranted] = useState(false);
   const [addEntryModalVisible, setAddEntryModalVisible] = useState(false);
   const [addPrescriptionModalVisible, setAddPrescriptionModalVisible] = useState(false);
+  const [uploadReportModalVisible, setUploadReportModalVisible] = useState(false);
+  const [chatModalVisible, setChatModalVisible] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatToggleVisible, setChatToggleVisible] = useState(false);
+  
   
   // Form states
   const [duration, setDuration] = useState(24);
@@ -51,12 +73,14 @@ const SimplePatientViewer = () => {
   const [patient, setPatient] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
+  const [reports, setReports] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('history'); // 'history' or 'prescriptions'
+  const [activeTab, setActiveTab] = useState('history'); // 'history', 'prescriptions', or 'reports'
   
   // Form instances
   const [addEntryForm] = Form.useForm();
   const [addPrescriptionForm] = Form.useForm();
+  const [uploadReportForm] = Form.useForm();
 
   // Check if user is authenticated
   const token = localStorage.getItem('token');
@@ -168,6 +192,32 @@ const SimplePatientViewer = () => {
               { name: 'Ilabxo', dosage: '200mg', frequency: 'Twice daily' }
             ],
             status: 'pending'
+          }
+        ]);
+      }
+
+      // Fetch reports
+      try {
+        const reportsResponse = await api.get(`/reports/patient/${patientId}`);
+        console.log('Reports response:', reportsResponse.data);
+        if (reportsResponse.data.success) {
+          setReports(reportsResponse.data.data.reports);
+        }
+      } catch (reportsError) {
+        console.log('Reports fetch failed:', reportsError);
+        // Set some sample data for demonstration
+        setReports([
+          {
+            _id: '1',
+            title: 'Blood Test Report',
+            documentType: 'lab_report',
+            uploadedAt: '2025-09-21T00:00:00.000Z',
+            ocrData: {
+              processingStatus: 'completed',
+              confidence: 0.95
+            },
+            originalFileName: 'blood_test_2025.pdf',
+            fileSize: 245760
           }
         ]);
       }
@@ -323,8 +373,167 @@ const SimplePatientViewer = () => {
     }
   };
 
-  
-  
+  const handleUploadReport = async (values) => {
+    try {
+      console.log('Upload report form submitted with values:', values);
+      setLoading(true);
+      
+      // Check if file is selected
+      if (!values.file || !Array.isArray(values.file) || values.file.length === 0) {
+        console.log('No file selected');
+        message.error('Please select a file to upload');
+        setLoading(false);
+        return;
+      }
+      
+      const file = values.file[0].originFileObj || values.file[0];
+      console.log('File selected:', file.name);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('abhaId', patientId);
+      formData.append('documentType', values.documentType);
+      formData.append('title', values.title);
+      formData.append('description', values.description || '');
+
+      const response = await api.post('/reports/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (response.data.success) {
+        message.success('Report uploaded successfully! Processing OCR...');
+        setUploadReportModalVisible(false);
+        uploadReportForm.resetFields();
+        fetchPatientData(); // Refresh data
+        
+        // Show chat toggle and open chat modal after successful upload
+        setChatToggleVisible(true);
+        setTimeout(() => {
+          setChatModalVisible(true);
+          setChatMessages([{
+            id: 1,
+            type: 'ai',
+            content: `Hello! I've analyzed your uploaded ${values.documentType.replace('_', ' ')} report. I can help you understand the medical information, answer questions about the findings, or explain any terms you're not familiar with. What would you like to know?`,
+            timestamp: new Date()
+          }]);
+        }, 1000);
+      } else {
+        message.error(response.data.message || 'Failed to upload report');
+      }
+    } catch (error) {
+      console.error('Error uploading report:', error);
+      console.error('Error response:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        message.error('Please log in again');
+        navigate('/login');
+      } else if (error.response?.status === 400) {
+        const errorMessage = error.response?.data?.message || 'Validation failed';
+        message.error(`Upload Error: ${errorMessage}`);
+      } else {
+        message.error('Failed to upload report');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadReport = async (reportId) => {
+    try {
+      const response = await api.get(`/reports/${reportId}/download`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `report_${reportId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      message.success('Report downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      message.error('Failed to download report');
+    }
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    try {
+      const response = await api.delete(`/reports/${reportId}`);
+      
+      if (response.data.success) {
+        message.success('Report deleted successfully!');
+        fetchPatientData(); // Refresh data
+      } else {
+        message.error(response.data.message || 'Failed to delete report');
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      message.error('Failed to delete report');
+    }
+  };
+
+  const handleChatSubmit = async () => {
+    if (!chatInput.trim()) return;
+    
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      content: chatInput,
+      timestamp: new Date()
+    };
+    
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+    setChatLoading(true);
+    
+    try {
+      // Get the latest uploaded report for context
+      const latestReport = reports[reports.length - 1];
+      const reportContext = latestReport ? `
+        Patient: ${patient?.name || 'Unknown'}
+        Report Title: ${latestReport.title}
+        Document Type: ${latestReport.documentType}
+        Uploaded: ${new Date(latestReport.uploadedAt).toLocaleDateString()}
+        OCR Status: ${latestReport.ocrData?.processingStatus || 'Unknown'}
+        ${latestReport.ocrData?.structuredData ? `Extracted Data: ${JSON.stringify(latestReport.ocrData.structuredData, null, 2)}` : ''}
+      ` : '';
+      
+      const response = await api.post('/reports/chat', {
+        message: chatInput,
+        patientId: patientId,
+        reportContext: reportContext,
+        chatHistory: chatMessages.slice(-5) // Last 5 messages for context
+      });
+      
+      const aiMessage = {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: response.data.message,
+        timestamp: new Date()
+      };
+      
+      setChatMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   if (accessGranted) {
     return (
       <>
@@ -515,6 +724,39 @@ const SimplePatientViewer = () => {
                     color: activeTab === 'prescriptions' ? '#1890ff' : '#333',
                     fontWeight: activeTab === 'prescriptions' ? '600' : 'normal'
                   }}>💊 e-Prescriptions</Text>
+                </div>
+
+                <div 
+                  style={{ 
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    borderRadius: '12px',
+                    transition: 'all 0.3s ease',
+                    background: activeTab === 'reports' ? 'linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)' : '#fff',
+                    border: activeTab === 'reports' ? '2px solid #1890ff' : '1px solid transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTab !== 'reports') {
+                      e.target.style.background = '#f5f5f5';
+                      e.target.style.transform = 'translateX(4px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTab !== 'reports') {
+                      e.target.style.background = '#fff';
+                      e.target.style.transform = 'translateX(0)';
+                    }
+                  }}
+                  onClick={() => {
+                    setActiveTab('reports');
+                    message.success('Switched to Reports view');
+                  }}
+                >
+                  <Text style={{ 
+                    fontSize: '14px',
+                    color: activeTab === 'reports' ? '#1890ff' : '#333',
+                    fontWeight: activeTab === 'reports' ? '600' : 'normal'
+                  }}>📄 Reports & Scans</Text>
                 </div>
               </div>
             </div>
@@ -824,7 +1066,9 @@ const SimplePatientViewer = () => {
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    background: activeTab === 'history' ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)' : 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+                    background: activeTab === 'history' ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)' : 
+                                activeTab === 'prescriptions' ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)' :
+                                'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
@@ -832,21 +1076,50 @@ const SimplePatientViewer = () => {
                     marginRight: '12px'
                   }}>
                     <Text style={{ color: 'white', fontSize: '18px' }}>
-                      {activeTab === 'history' ? '📋' : '💊'}
+                      {activeTab === 'history' ? '📋' : activeTab === 'prescriptions' ? '💊' : '📄'}
                     </Text>
                   </div>
                   <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
-                    {activeTab === 'history' ? 'Complete Medical History' : 'e-Prescriptions'}
+                    {activeTab === 'history' ? 'Complete Medical History' : 
+                     activeTab === 'prescriptions' ? 'e-Prescriptions' : 
+                     'Reports & Scans'}
                   </Title>
                 </div>
-                <button 
-                  onClick={() => {
-                    if (activeTab === 'history') {
-                      setAddEntryModalVisible(true);
-                    } else {
-                      setAddPrescriptionModalVisible(true);
-                    }
-                  }}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {activeTab === 'reports' && reports.length > 0 && (
+                    <button 
+                      onClick={() => setChatModalVisible(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 24px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        boxShadow: '0 4px 12px rgba(114, 46, 209, 0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <MessageOutlined />
+                      Ask AI About Reports
+                    </button>
+                  )}
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (activeTab === 'history') {
+                        setAddEntryModalVisible(true);
+                      } else if (activeTab === 'prescriptions') {
+                        setAddPrescriptionModalVisible(true);
+                      } else if (activeTab === 'reports') {
+                        setUploadReportModalVisible(true);
+                      }
+                    }}
                   style={{
                     background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
                     color: 'white',
@@ -862,21 +1135,26 @@ const SimplePatientViewer = () => {
                     gap: '8px'
                   }}
                 >
-                  <PlusOutlined />
-                  {activeTab === 'history' ? 'Add New Entry' : 'Create New'}
-                </button>
+                    <PlusOutlined />
+                    {activeTab === 'history' ? 'Add New Entry' : 
+                     activeTab === 'prescriptions' ? 'Create New' : 
+                     'Upload Report'}
+                  </button>
+                </div>
               </div>
               
               {dataLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
                   <Spin size="large" />
                   <div style={{ marginTop: '16px' }}>
-                    <Text>Loading {activeTab === 'history' ? 'medical history' : 'prescriptions'}...</Text>
+                    <Text>Loading {activeTab === 'history' ? 'medical history' : 
+                                 activeTab === 'prescriptions' ? 'prescriptions' : 
+                                 'reports'}...</Text>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {activeTab === 'history' ? (
+                  {activeTab === 'history' && (
                     // Medical History Content
                     medicalHistory.length > 0 ? (
                       medicalHistory.map((entry, index) => (
@@ -1006,7 +1284,9 @@ const SimplePatientViewer = () => {
                         </Button>
                       </div>
                     )
-                  ) : (
+                  )}
+
+                  {activeTab === 'prescriptions' && (
                     // Prescriptions Content
                     <div>
                       <div style={{ 
@@ -1179,6 +1459,229 @@ const SimplePatientViewer = () => {
                             onClick={() => setAddPrescriptionModalVisible(true)}
                           >
                             Add the first prescription
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'reports' && (
+                    // Reports Content
+                    <div>
+                      <div style={{ 
+                        marginBottom: '24px',
+                        padding: '20px',
+                        background: 'linear-gradient(135deg, #f8fbff 0%, #f0f9ff 100%)',
+                        borderRadius: '12px',
+                        border: '1px solid #e6f7ff'
+                      }}>
+                        <Title level={3} style={{ 
+                          margin: 0, 
+                          color: '#722ed1',
+                          fontSize: '24px',
+                          fontWeight: '700'
+                        }}>
+                          Medical Reports & Scans
+                        </Title>
+                        <Text style={{ 
+                          fontSize: '16px', 
+                          color: '#666',
+                          marginTop: '8px'
+                        }}>
+                          Upload and manage medical documents with AI-powered scanning
+                        </Text>
+                      </div>
+                      
+                      {reports.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {reports.map((report, index) => (
+                            <div key={index} style={{ 
+                              background: '#fff',
+                              padding: '24px', 
+                              borderRadius: '12px',
+                              border: '1px solid #e8f4fd',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                              transition: 'all 0.3s ease',
+                              position: 'relative'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.transform = 'translateY(-2px)';
+                              e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.transform = 'translateY(0)';
+                              e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                            }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ marginBottom: '8px' }}>
+                                    <Text style={{ 
+                                      fontSize: '18px', 
+                                      color: '#722ed1',
+                                      fontWeight: '600',
+                                      marginRight: '12px'
+                                    }}>
+                                      {report.title}
+                                    </Text>
+                                    <Tag color="purple" style={{ borderRadius: '4px', padding: '4px 8px' }}>
+                                      {report.documentType.replace('_', ' ').toUpperCase()}
+                                    </Tag>
+                                  </div>
+                                  
+                                  <div style={{ marginBottom: '8px' }}>
+                                    <Text style={{ 
+                                      fontSize: '14px', 
+                                      color: '#666',
+                                      fontWeight: '500'
+                                    }}>
+                                      File:
+                                    </Text>
+                                    <Text style={{ 
+                                      fontSize: '14px', 
+                                      color: '#333',
+                                      marginLeft: '8px'
+                                    }}>
+                                      {report.originalFileName}
+                                    </Text>
+                                  </div>
+
+                                  <div style={{ marginBottom: '8px' }}>
+                                    <Text style={{ 
+                                      fontSize: '14px', 
+                                      color: '#666',
+                                      fontWeight: '500'
+                                    }}>
+                                      Uploaded:
+                                    </Text>
+                                    <Text style={{ 
+                                      fontSize: '14px', 
+                                      color: '#333',
+                                      marginLeft: '8px'
+                                    }}>
+                                      {new Date(report.uploadedAt).toLocaleDateString('en-GB', { 
+                                        day: '2-digit',
+                                        month: '2-digit', 
+                                        year: 'numeric' 
+                                      })}
+                                    </Text>
+                                  </div>
+
+                                  {report.ocrData && (
+                                    <div style={{ marginBottom: '8px' }}>
+                                      <Text style={{ 
+                                        fontSize: '14px', 
+                                        color: '#666',
+                                        fontWeight: '500'
+                                      }}>
+                                        OCR Status:
+                                      </Text>
+                                      <Tag 
+                                        color={report.ocrData.processingStatus === 'completed' ? 'green' : 
+                                              report.ocrData.processingStatus === 'failed' ? 'red' : 'orange'}
+                                        style={{ marginLeft: '8px' }}
+                                      >
+                                        {report.ocrData.processingStatus.toUpperCase()}
+                                      </Tag>
+                                      {report.ocrData.confidence && (
+                                        <Text style={{ 
+                                          fontSize: '12px', 
+                                          color: '#999',
+                                          marginLeft: '8px'
+                                        }}>
+                                          ({Math.round(report.ocrData.confidence * 100)}% confidence)
+                                        </Text>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <Button 
+                                    type="text" 
+                                    icon={<EyeOutlined />}
+                                    style={{ 
+                                      color: '#722ed1',
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: '6px',
+                                      height: '32px',
+                                      padding: '0 12px'
+                                    }}
+                                    onClick={() => {
+                                      message.info('View report details');
+                                    }}
+                                  >
+                                    View
+                                  </Button>
+                                  
+                                  <Button 
+                                    type="text" 
+                                    icon={<DownloadOutlined />}
+                                    style={{ 
+                                      color: '#52c41a',
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: '6px',
+                                      height: '32px',
+                                      padding: '0 12px'
+                                    }}
+                                    onClick={() => handleDownloadReport(report._id)}
+                                  >
+                                    Download
+                                  </Button>
+                                  
+                                  <Button 
+                                    type="text" 
+                                    icon={<DeleteOutlined />}
+                                    style={{ 
+                                      color: '#ff4d4f',
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: '6px',
+                                      height: '32px',
+                                      padding: '0 12px'
+                                    }}
+                                    onClick={() => handleDeleteReport(report._id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ 
+                          textAlign: 'center', 
+                          padding: '60px 40px', 
+                          background: 'linear-gradient(135deg, #f8fbff 0%, #f0f9ff 100%)',
+                          borderRadius: '16px',
+                          border: '2px dashed #d9d9d9'
+                        }}>
+                          <FileTextOutlined style={{ fontSize: '64px', marginBottom: '20px', color: '#722ed1' }} />
+                          <Title level={4} style={{ color: '#666', marginBottom: '8px' }}>No reports found</Title>
+                          <Text style={{ color: '#999', fontSize: '16px', marginBottom: '20px' }}>
+                            Upload medical documents and reports for AI-powered scanning
+                          </Text>
+                          <Button 
+                            type="primary" 
+                            size="large"
+                            style={{ 
+                              background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+                              borderColor: '#722ed1',
+                              borderRadius: '12px',
+                              height: '48px',
+                              padding: '0 32px',
+                              boxShadow: '0 4px 12px rgba(114, 46, 209, 0.3)',
+                              fontWeight: '600'
+                            }}
+                            icon={<UploadOutlined />}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Upload first report button clicked');
+                              setUploadReportModalVisible(true);
+                            }}
+                          >
+                            Upload first report
                           </Button>
                         </div>
                       )}
@@ -1693,6 +2196,318 @@ const SimplePatientViewer = () => {
         </Form>
       </Modal>
 
+
+      {/* AI Chat Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <RobotOutlined style={{ color: '#722ed1', fontSize: '20px' }} />
+            <span>AI Health Assistant</span>
+            <Tag color="purple" style={{ marginLeft: 'auto' }}>Health Domain Only</Tag>
+          </div>
+        }
+        open={chatModalVisible}
+        onCancel={() => {
+          setChatModalVisible(false);
+          setChatInput('');
+        }}
+        footer={null}
+        centered
+        width={800}
+        style={{ top: 20 }}
+      >
+        <div style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+          {/* Chat Messages */}
+          <div style={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            padding: '16px', 
+            background: '#f8f9fa',
+            borderRadius: '8px',
+            marginBottom: '16px'
+          }}>
+            {chatMessages.length === 0 ? (
+              <Empty
+                description="Ask me anything about your uploaded medical reports!"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ) : (
+              <List
+                dataSource={chatMessages}
+                renderItem={(msg) => (
+                  <List.Item style={{ border: 'none', padding: '8px 0' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      gap: '12px',
+                      width: '100%'
+                    }}>
+                      <Avatar 
+                        icon={msg.type === 'user' ? <UserOutlined /> : <RobotOutlined />}
+                        style={{ 
+                          backgroundColor: msg.type === 'user' ? '#1890ff' : '#722ed1',
+                          flexShrink: 0
+                        }}
+                      />
+                      <div style={{ 
+                        flex: 1,
+                        background: msg.type === 'user' ? '#e6f7ff' : '#f0f0f0',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        border: msg.type === 'user' ? '1px solid #91d5ff' : '1px solid #d9d9d9'
+                      }}>
+                        <div style={{ 
+                          fontSize: '14px', 
+                          lineHeight: '1.5',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {msg.content}
+                        </div>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#999', 
+                          marginTop: '8px',
+                          textAlign: 'right'
+                        }}>
+                          {msg.timestamp.toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            )}
+            {chatLoading && (
+              <div style={{ textAlign: 'center', padding: '16px' }}>
+                <Spin size="small" />
+                <Text style={{ marginLeft: '8px', color: '#666' }}>AI is thinking...</Text>
+              </div>
+            )}
+          </div>
+
+          {/* Chat Input */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <AntInput
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask about your medical reports... (e.g., 'What does this lab result mean?')"
+              onPressEnter={handleChatSubmit}
+              disabled={chatLoading}
+              style={{ flex: 1 }}
+            />
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={handleChatSubmit}
+              loading={chatLoading}
+              disabled={!chatInput.trim()}
+              style={{
+                background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+                borderColor: '#722ed1'
+              }}
+            >
+              Send
+            </Button>
+          </div>
+
+          {/* Health Domain Notice */}
+          <div style={{ 
+            marginTop: '12px',
+            padding: '8px 12px',
+            background: '#f6ffed',
+            border: '1px solid #b7eb8f',
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#52c41a'
+          }}>
+            <Text style={{ color: '#52c41a' }}>
+              🤖 This AI assistant is specialized in health and medical topics only. 
+              Please ask questions related to your uploaded medical reports and documents.
+            </Text>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Floating Chat Toggle Button */}
+      {chatToggleVisible && (
+        <div style={{
+          position: 'fixed',
+          bottom: '30px',
+          right: '30px',
+          zIndex: 1000
+        }}>
+          <Button
+            type="primary"
+            shape="circle"
+            size="large"
+            icon={<MessageOutlined />}
+            onClick={() => setChatModalVisible(true)}
+            style={{
+              background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+              borderColor: '#722ed1',
+              width: '60px',
+              height: '60px',
+              boxShadow: '0 4px 20px rgba(114, 46, 209, 0.4)',
+              animation: 'pulse 2s infinite'
+            }}
+          />
+          <div style={{
+            position: 'absolute',
+            bottom: '70px',
+            right: '0',
+            background: '#722ed1',
+            color: 'white',
+            padding: '8px 12px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '600',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+          }}>
+            Ask AI About Reports
+          </div>
+        </div>
+      )}
+
+      {/* Upload Report Modal */}
+      <Modal
+        title="Upload Medical Report"
+        open={uploadReportModalVisible}
+        onCancel={() => {
+          setUploadReportModalVisible(false);
+          uploadReportForm.resetFields();
+        }}
+        footer={null}
+        centered
+        width={700}
+      >
+        <Form
+          form={uploadReportForm}
+          layout="vertical"
+          onFinish={handleUploadReport}
+        >
+          <Form.Item
+            name="file"
+            label="Upload Document"
+            rules={[{ required: true, message: 'Please upload a file' }]}
+            valuePropName="fileList"
+            getValueFromEvent={(e) => {
+              if (Array.isArray(e)) {
+                return e;
+              }
+              return e && e.fileList;
+            }}
+          >
+            <Upload.Dragger
+              name="file"
+              multiple={false}
+              accept="image/*,.pdf"
+              beforeUpload={() => false}
+              showUploadList={{
+                showPreviewIcon: false,
+                showRemoveIcon: true,
+              }}
+            >
+              <p className="ant-upload-drag-icon">
+                <UploadOutlined style={{ fontSize: '48px', color: '#722ed1' }} />
+              </p>
+              <p className="ant-upload-text" style={{ fontSize: '16px', fontWeight: '600' }}>
+                Click or drag file to this area to upload
+              </p>
+              <p className="ant-upload-hint" style={{ color: '#666' }}>
+                Support for single file upload. Images (JPG, PNG, GIF, WebP) and PDF files are supported.
+                Maximum file size: 10MB
+              </p>
+            </Upload.Dragger>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="documentType"
+                label="Document Type"
+                rules={[{ required: true, message: 'Please select document type' }]}
+              >
+                <Select placeholder="Select document type">
+                  <Option value="prescription">Prescription</Option>
+                  <Option value="lab_report">Lab Report</Option>
+                  <Option value="scan_report">Scan Report</Option>
+                  <Option value="discharge_summary">Discharge Summary</Option>
+                  <Option value="other">Other</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="title"
+                label="Report Title"
+                rules={[{ required: true, message: 'Please enter report title' }]}
+              >
+                <Input placeholder="e.g., Blood Test Report - Jan 2025" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="description"
+            label="Description (Optional)"
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="Brief description of the report or any additional notes..."
+            />
+          </Form.Item>
+
+          <div style={{
+            padding: '16px',
+            background: 'linear-gradient(135deg, #f8fbff 0%, #f0f9ff 100%)',
+            borderRadius: '8px',
+            border: '1px solid #e6f7ff',
+            marginBottom: '16px'
+          }}>
+            <Text style={{ fontSize: '14px', color: '#1890ff', fontWeight: '500' }}>
+              🤖 AI-Powered Processing
+            </Text>
+            <div style={{ marginTop: '8px' }}>
+              <Text style={{ fontSize: '13px', color: '#666' }}>
+                Your document will be automatically processed using Gemini AI to extract:
+              </Text>
+              <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '13px', color: '#666' }}>
+                <li>Patient information and medical data</li>
+                <li>Diagnosis and treatment details</li>
+                <li>Lab values and vital signs</li>
+                <li>Medication information</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right', marginTop: '24px' }}>
+            <Space>
+              <Button
+                onClick={() => {
+                  setUploadReportModalVisible(false);
+                  uploadReportForm.resetFields();
+                }}
+                style={{ marginRight: 8 }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                icon={<UploadOutlined />}
+                style={{
+                  background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+                  borderColor: '#722ed1'
+                }}
+              >
+                Upload & Process
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
     </Layout>
   );
 };

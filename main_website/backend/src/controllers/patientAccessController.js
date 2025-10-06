@@ -1,5 +1,4 @@
 import User from '../models/User.js';
-import HealthRecord from '../models/HealthRecord.js';
 import PatientAccess from '../models/PatientAccess.js';
 
 /**
@@ -205,11 +204,7 @@ export const getPatientRecords = async (req, res) => {
       });
     }
 
-    // Get health records
-    const healthRecords = await HealthRecord.find({
-      patientId,
-      isActive: true
-    }).sort({ date: -1 });
+    // Health records functionality removed - using MedicalHistory and Prescription models instead
 
     // Log access usage
     accessRequest.accessLog.push({
@@ -232,7 +227,6 @@ export const getPatientRecords = async (req, res) => {
           profile: patient.profile,
           createdAt: patient.createdAt
         },
-        healthRecords,
         accessInfo: {
           grantedAt: accessRequest.accessGrantedAt,
           expiresAt: accessRequest.accessExpiresAt,

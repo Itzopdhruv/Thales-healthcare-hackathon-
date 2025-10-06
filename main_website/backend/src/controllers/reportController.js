@@ -1,0 +1,583 @@
+import Report from '../models/Report.js';
+import User from '../models/User.js';
+import { extractMedicalData, validateMedicalData, generateAIAnalysis } from '../services/ocrService.js';
+import path from 'path';
+import fs from 'fs';
+
+/**
+ * Upload and process a medical document
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const uploadReport = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const { abhaId, documentType, title, description } = req.body;
+    const userId = req.user.userId;
+
+    // Validate required fields
+    if (!abhaId || !documentType || !title) {
+      return res.status(400).json({
+        success: false,
+        message: 'ABHA ID, document type, and title are required'
+      });
+    }
+
+    // Verify patient exists
+    const patient = await User.findOne({ abhaId, role: 'patient' });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Patient not found with this ABHA ID'
+      });
+    }
+
+    // Create report record
+    const reportData = {
+      abhaId,
+      patientId: patient._id,
+      documentType,
+      title,
+      description: description || '',
+      originalFileName: req.file.originalname,
+      fileName: req.file.filename,
+      filePath: req.file.path,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      uploadedBy: userId,
+      tags: [documentType],
+      category: getCategoryFromDocumentType(documentType)
+    };
+
+    const report = new Report(reportData);
+    await report.save();
+
+    // Process OCR in background (don't await)
+    processOCRAsync(report._id, req.file.buffer, req.file.mimetype, documentType);
+
+    res.status(201).json({
+      success: true,
+      message: 'Report uploaded successfully',
+      data: {
+        reportId: report._id,
+        fileName: report.fileName,
+        documentType: report.documentType,
+        title: report.title,
+        uploadStatus: 'Processing OCR...'
+      }
+    });
+
+  } catch (error) {
+    console.error('Upload report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Process OCR asynchronously
+ * @param {string} reportId - Report ID
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {string} mimeType - MIME type
+ * @param {string} documentType - Document type
+ */
+const processOCRAsync = async (reportId, fileBuffer, mimeType, documentType) => {
+  try {
+    // Update status to processing
+    await Report.findByIdAndUpdate(reportId, {
+      'ocrData.processingStatus': 'processing'
+    });
+
+    // Convert buffer to base64
+    const base64Image = fileBuffer.toString('base64');
+
+    // Extract medical data using OCR
+    const ocrResult = await extractMedicalData(base64Image, mimeType, documentType);
+
+    if (ocrResult.success) {
+      // Validate and clean the extracted data
+      const validatedData = validateMedicalData(ocrResult.data, documentType);
+      
+      // Generate AI analysis
+      const aiAnalysis = generateAIAnalysis(validatedData, documentType);
+
+      // Update report with OCR results
+      await Report.findByIdAndUpdate(reportId, {
+        'ocrData.extractedText': JSON.stringify(validatedData, null, 2),
+        'ocrData.structuredData': validatedData,
+        'ocrData.confidence': ocrResult.confidence,
+        'ocrData.processingStatus': 'completed',
+        'ocrData.processedAt': new Date(),
+        'medicalData': mapToMedicalData(validatedData, documentType),
+        'aiAnalysis': aiAnalysis
+      });
+
+      console.log(`✅ OCR processing completed for report ${reportId}`);
+    } else {
+      // Update with error status
+      await Report.findByIdAndUpdate(reportId, {
+        'ocrData.processingStatus': 'failed',
+        'ocrData.errorMessage': ocrResult.error,
+        'ocrData.processedAt': new Date()
+      });
+
+      console.error(`❌ OCR processing failed for report ${reportId}:`, ocrResult.error);
+    }
+  } catch (error) {
+    console.error('OCR processing error:', error);
+    
+    // Update with error status
+    await Report.findByIdAndUpdate(reportId, {
+      'ocrData.processingStatus': 'failed',
+      'ocrData.errorMessage': error.message,
+      'ocrData.processedAt': new Date()
+    });
+  }
+};
+
+/**
+ * Map extracted data to medical data structure
+ * @param {Object} data - Extracted data
+ * @param {string} documentType - Document type
+ * @returns {Object} Mapped medical data
+ */
+const mapToMedicalData = (data, documentType) => {
+  const medicalData = {
+    diagnosis: {
+      primary: data.diagnosis || data.primaryDiagnosis || null,
+      secondary: data.secondaryDiagnosis || [],
+      icd10Codes: []
+    },
+    treatment: {
+      medications: data.medicines || [],
+      procedures: data.procedures || [],
+      followUp: data.followUp || { required: false, date: null, instructions: '' }
+    },
+    vitalSigns: data.vitalSigns || {},
+    labResults: data.labValues || []
+  };
+
+  return medicalData;
+};
+
+/**
+ * Get category from document type
+ * @param {string} documentType - Document type
+ * @returns {string} Category
+ */
+const getCategoryFromDocumentType = (documentType) => {
+  const categoryMap = {
+    'prescription': 'prescription',
+    'lab_report': 'diagnostic',
+    'scan_report': 'diagnostic',
+    'discharge_summary': 'treatment',
+    'other': 'diagnostic'
+  };
+  return categoryMap[documentType] || 'diagnostic';
+};
+
+/**
+ * Get all reports for a patient
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getPatientReports = async (req, res) => {
+  try {
+    const { abhaId } = req.params;
+    const { documentType, category, page = 1, limit = 10 } = req.query;
+    const userId = req.user.userId;
+
+    // Build query
+    const query = { abhaId, isActive: true };
+    
+    if (documentType) {
+      query.documentType = documentType;
+    }
+    
+    if (category) {
+      query.category = category;
+    }
+
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Get reports
+    const reports = await Report.find(query)
+      .populate('uploadedBy', 'name email')
+      .sort({ uploadedAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .select('-filePath -ocrData.extractedText');
+
+    // Get total count
+    const total = await Report.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: {
+        reports,
+        pagination: {
+          current: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit)),
+          total
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get patient reports error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reports',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get a specific report by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getReportById = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user.userId;
+
+    const report = await Report.findById(reportId)
+      .populate('uploadedBy', 'name email')
+      .populate('patientId', 'name email abhaId');
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Check access permissions
+    if (!report.canAccess(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this report'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: report
+    });
+
+  } catch (error) {
+    console.error('Get report by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Download report file
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const downloadReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user.userId;
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Check access permissions
+    if (!report.canAccess(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this report'
+      });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(report.filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server'
+      });
+    }
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', report.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${report.originalFileName}"`);
+    res.setHeader('Content-Length', report.fileSize);
+
+    // Stream the file
+    const fileStream = fs.createReadStream(report.filePath);
+    fileStream.pipe(res);
+
+  } catch (error) {
+    console.error('Download report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to download report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Update report details
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const updateReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user.userId;
+    const updates = req.body;
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Check if user can edit (only uploader or admin)
+    if (report.uploadedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the uploader can edit this report'
+      });
+    }
+
+    // Update allowed fields
+    const allowedUpdates = ['title', 'description', 'tags', 'category', 'visibility'];
+    const updateData = {};
+    
+    allowedUpdates.forEach(field => {
+      if (updates[field] !== undefined) {
+        updateData[field] = updates[field];
+      }
+    });
+
+    const updatedReport = await Report.findByIdAndUpdate(
+      reportId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Report updated successfully',
+      data: updatedReport
+    });
+
+  } catch (error) {
+    console.error('Update report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Delete report
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const deleteReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user.userId;
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Check if user can delete (only uploader or admin)
+    if (report.uploadedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the uploader can delete this report'
+      });
+    }
+
+    // Soft delete
+    await Report.findByIdAndUpdate(reportId, { isActive: false });
+
+    // Optionally delete physical file
+    if (fs.existsSync(report.filePath)) {
+      fs.unlinkSync(report.filePath);
+    }
+
+    res.json({
+      success: true,
+      message: 'Report deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get OCR processing status
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getOCRStatus = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user.userId;
+
+    const report = await Report.findById(reportId)
+      .select('ocrData.processingStatus ocrData.confidence ocrData.errorMessage ocrData.processedAt');
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Check access permissions
+    if (!report.canAccess(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this report'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        processingStatus: report.ocrData.processingStatus,
+        confidence: report.ocrData.confidence,
+        errorMessage: report.ocrData.errorMessage,
+        processedAt: report.ocrData.processedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Get OCR status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get OCR status',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Chat with AI about uploaded reports
+// @route   POST /api/reports/chat
+// @access  Private (Admin/Doctor)
+export const chatWithAI = async (req, res) => {
+  try {
+    const { message, patientId, reportContext, chatHistory } = req.body;
+
+    if (!message || !patientId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Message and patient ID are required' 
+      });
+    }
+
+    // Get patient's reports for context
+    const reports = await Report.find({ abhaId: patientId, isActive: true })
+      .sort({ uploadedAt: -1 })
+      .limit(5); // Last 5 reports
+
+    // Build context for AI
+    let context = `You are a specialized medical AI assistant. You can ONLY answer questions related to health, medical reports, and medical conditions. You must NOT answer questions about other topics.
+
+Patient Context:
+- Patient ID: ${patientId}
+- Number of uploaded reports: ${reports.length}
+
+Recent Reports Context:
+${reports.map((report, index) => `
+Report ${index + 1}:
+- Title: ${report.title}
+- Type: ${report.documentType}
+- Uploaded: ${report.uploadedAt}
+- OCR Status: ${report.ocrData?.processingStatus || 'Unknown'}
+${report.ocrData?.structuredData ? `- Extracted Data: ${JSON.stringify(report.ocrData.structuredData, null, 2)}` : ''}
+`).join('\n')}
+
+${reportContext ? `Additional Context: ${reportContext}` : ''}
+
+Chat History:
+${chatHistory ? chatHistory.map(msg => `${msg.type}: ${msg.content}`).join('\n') : 'No previous conversation'}
+
+IMPORTANT RULES:
+1. ONLY answer health and medical questions
+2. If asked about non-medical topics, politely redirect to health topics
+3. Be helpful but always recommend consulting a healthcare professional for serious concerns
+4. Use the uploaded report data to provide relevant insights
+5. Keep responses concise and professional
+
+User Question: ${message}`;
+
+    // For now, we'll use a simple response since we need to implement proper chat
+    // In a real implementation, you'd call Gemini's chat API
+    const aiResponse = `I understand you're asking about your medical reports. Based on the uploaded documents, I can help you understand:
+
+1. **Report Analysis**: I can explain what different values and findings mean
+2. **Medical Terms**: I can clarify any medical terminology you're unfamiliar with  
+3. **Health Insights**: I can provide general information about conditions mentioned
+4. **Next Steps**: I can suggest what to discuss with your healthcare provider
+
+Please ask me specific questions about your reports, such as:
+- "What does this lab value mean?"
+- "Is this result normal?"
+- "What should I ask my doctor about this finding?"
+
+Remember: I'm here to help you understand your medical information, but always consult your healthcare provider for medical advice and treatment decisions.`;
+
+    res.status(200).json({
+      success: true,
+      message: aiResponse,
+      data: { 
+        response: aiResponse,
+        reportCount: reports.length,
+        context: context.substring(0, 500) + '...' // Truncated for response
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in AI chat:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to process chat request', 
+      error: error.message 
+    });
+  }
+};

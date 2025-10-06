@@ -1,5 +1,4 @@
 import User from '../models/User.js';
-import HealthRecord from '../models/HealthRecord.js';
 import bcrypt from 'bcryptjs';
 
 /**
@@ -169,62 +168,7 @@ export const createPatientWithABHA = async (req, res) => {
     await newUser.save();
     console.log('User saved successfully with ID:', newUser._id);
 
-    // Create initial health record with patient information
-    const healthRecordData = {
-      patientId: newUser._id,
-      abhaId,
-      recordType: 'other',
-      title: 'Initial Patient Profile',
-      description: 'Patient profile created with ABHA ID',
-      date: new Date(),
-      diagnosis: {
-        primary: medicalConditions || 'No known conditions',
-        secondary: [],
-        icd10Codes: []
-      },
-      medications: medications ? [{
-        name: medications,
-        dosage: '',
-        frequency: '',
-        duration: '',
-        instructions: '',
-        prescribedBy: 'System'
-      }] : [],
-      symptoms: [],
-      treatment: {
-        procedure: 'Initial Assessment',
-        notes: `Patient profile created. Allergies: ${allergies || 'None reported'}`,
-        followUp: null
-      },
-      source: {
-        type: 'manual',
-        facilityId: 'AayuLink',
-        facilityName: 'AayuLink Healthcare Platform',
-        importedAt: new Date()
-      },
-      aiSummary: {
-        generated: false,
-        summary: '',
-        keyPoints: [],
-        riskFactors: [],
-        recommendations: [],
-        generatedAt: null,
-        model: ''
-      },
-      privacy: {
-        isPublic: false,
-        sharedWith: [],
-        consentGiven: true,
-        consentExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
-      },
-      tags: ['initial_profile', 'abha_created'],
-      isActive: true
-    };
-
-    const newHealthRecord = new HealthRecord(healthRecordData);
-    await newHealthRecord.save();
-    
-    console.log('Health record saved successfully with ID:', newHealthRecord._id);
+    // Health record functionality removed - using MedicalHistory and Prescription models instead
 
     // Return success response
     res.status(201).json({
@@ -248,7 +192,6 @@ export const createPatientWithABHA = async (req, res) => {
         allergies: allergies || 'None reported',
         medicalConditions: medicalConditions || 'None reported',
         medications: medications || 'None reported',
-        healthRecordId: newHealthRecord._id,
         createdAt: newUser.createdAt
       }
     });
@@ -317,12 +260,6 @@ export const getPatientByABHAId = async (req, res) => {
       });
     }
 
-    // Get health records for this patient
-    const healthRecords = await HealthRecord.find({ abhaId })
-      .select('-__v')
-      .sort({ date: -1 })
-      .limit(10); // Get last 10 records
-
     res.status(200).json({
       success: true,
       message: 'Patient found successfully',
@@ -338,17 +275,7 @@ export const getPatientByABHAId = async (req, res) => {
           profile: patient.profile,
           createdAt: patient.createdAt,
           lastLogin: patient.lastLogin
-        },
-        healthRecords: healthRecords.map(record => ({
-          id: record._id,
-          recordType: record.recordType,
-          title: record.title,
-          date: record.date,
-          doctor: record.doctor,
-          diagnosis: record.diagnosis,
-          medications: record.medications,
-          symptoms: record.symptoms
-        }))
+        }
       }
     });
 
