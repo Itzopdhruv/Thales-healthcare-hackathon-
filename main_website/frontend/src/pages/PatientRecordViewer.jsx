@@ -449,7 +449,11 @@ const PatientRecordViewer = () => {
                 label="Date"
                 rules={[{ required: true, message: 'Please select date' }]}
               >
-                <DatePicker style={{ width: '100%' }} />
+                <DatePicker 
+                  style={{ width: '100%' }} 
+                  getPopupContainer={(trigger) => trigger.parentElement}
+                  placement="bottomLeft"
+                />
               </Form.Item>
             </Col>
           </Row>

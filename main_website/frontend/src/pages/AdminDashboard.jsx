@@ -1225,7 +1225,12 @@ const AdminDashboard = () => {
                 rules={[{ required: true, message: 'Please select date of birth' }]} 
                 style={{ width: '50%' }}
               >
-                <DatePicker placeholder="Select date" style={{ width: '100%' }} />
+                <DatePicker 
+                  placeholder="Select date" 
+                  style={{ width: '100%' }} 
+                  getPopupContainer={(trigger) => trigger.parentElement}
+                  placement="bottomLeft"
+                />
               </Form.Item>
               <Form.Item 
                 name="bloodType" 

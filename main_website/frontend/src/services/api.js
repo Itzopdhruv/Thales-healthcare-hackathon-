@@ -3,6 +3,7 @@ import axios from 'axios';
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: '/api', // This will use the Vite proxy
+  timeout: 120000, // Allow up to 120s for AI/report requests
   headers: {
     'Content-Type': 'application/json',
   },
@@ -77,6 +78,25 @@ export const patientAPI = {
       return response.data;
     } catch (error) {
       throw error.response?.data || { success: false, error: 'Failed to update patient' };
+    }
+  },
+
+  // AI Assistant API
+  chatWithAIAssistant: async (data) => {
+    try {
+      const response = await api.post('/ai-assistant/chat', data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, error: 'Failed to chat with AI Assistant' };
+    }
+  },
+
+  getPatientContext: async (patientId) => {
+    try {
+      const response = await api.get(`/ai-assistant/patient-context/${patientId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, error: 'Failed to get patient context' };
     }
   }
 };

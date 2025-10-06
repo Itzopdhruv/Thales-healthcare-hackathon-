@@ -1,6 +1,7 @@
 import Report from '../models/Report.js';
 import User from '../models/User.js';
 import { extractMedicalData, validateMedicalData, generateAIAnalysis } from '../services/ocrService.js';
+import { summarizeReportWithGemini, summarizeReportFromFile } from '../services/geminiService.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -305,12 +306,8 @@ export const viewReport = async (req, res) => {
       });
     }
 
-    // Check access permissions
-    const isUploader = report.uploadedBy.toString() === userId.toString();
-    const isPatient = report.patientId.toString() === userId.toString();
-    const isShared = report.sharedWith.some(share => share.userId.toString() === userId.toString());
-    
-    if (!isUploader && !isPatient && !isShared) {
+    // Allow admin/doctor bypass
+    if (!(req.user?.role === 'admin' || req.user?.role === 'doctor') && !report.canAccess(userId)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this report'
@@ -362,12 +359,8 @@ export const downloadReport = async (req, res) => {
       });
     }
 
-    // Check access permissions
-    const isUploader = report.uploadedBy.toString() === userId.toString();
-    const isPatient = report.patientId.toString() === userId.toString();
-    const isShared = report.sharedWith.some(share => share.userId.toString() === userId.toString());
-    
-    if (!isUploader && !isPatient && !isShared) {
+    // Allow admin/doctor bypass
+    if (!(req.user?.role === 'admin' || req.user?.role === 'doctor') && !report.canAccess(userId)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this report'
@@ -478,8 +471,8 @@ export const deleteReport = async (req, res) => {
       });
     }
 
-    // Check if user can delete (only uploader or admin)
-    if (report.uploadedBy.toString() !== userId.toString()) {
+    // Check if user can delete (uploader or admin)
+    if (report.uploadedBy.toString() !== userId.toString() && req.user?.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Only the uploader can delete this report'
@@ -562,7 +555,7 @@ export const getOCRStatus = async (req, res) => {
 // @access  Private (Admin/Doctor)
 export const chatWithAI = async (req, res) => {
   try {
-    const { message, patientId, reportContext, chatHistory } = req.body;
+    const { message, patientId, reportContext, chatHistory, reportId } = req.body;
 
     if (!message || !patientId) {
       return res.status(400).json({ 
@@ -607,21 +600,29 @@ IMPORTANT RULES:
 
 User Question: ${message}`;
 
-    // For now, we'll use a simple response since we need to implement proper chat
-    // In a real implementation, you'd call Gemini's chat API
-    const aiResponse = `I understand you're asking about your medical reports. Based on the uploaded documents, I can help you understand:
+    // If a specific report is in context, try to summarize using Gemini
+    let aiResponse;
+    if (reportId) {
+      const r = await Report.findById(reportId).select('title documentType ocrData filePath mimeType');
+      if (r) {
+        // Prefer summarizing directly from the uploaded file if OCR is not ready
+        if (r.filePath && r.mimeType) {
+          aiResponse = await summarizeReportFromFile({ filePath: r.filePath, mimeType: r.mimeType, title: r.title });
+        } else {
+          const text = await summarizeReportWithGemini({
+            title: r.title,
+            documentType: r.documentType,
+            ocrText: r.ocrData?.extractedText,
+            structuredData: r.ocrData?.structuredData
+          });
+          aiResponse = text;
+        }
+      }
+    }
 
-1. **Report Analysis**: I can explain what different values and findings mean
-2. **Medical Terms**: I can clarify any medical terminology you're unfamiliar with  
-3. **Health Insights**: I can provide general information about conditions mentioned
-4. **Next Steps**: I can suggest what to discuss with your healthcare provider
-
-Please ask me specific questions about your reports, such as:
-- "What does this lab value mean?"
-- "Is this result normal?"
-- "What should I ask my doctor about this finding?"
-
-Remember: I'm here to help you understand your medical information, but always consult your healthcare provider for medical advice and treatment decisions.`;
+    if (!aiResponse) {
+      aiResponse = 'I generated a concise summary is not available for this report right now.';
+    }
 
     res.status(200).json({
       success: true,

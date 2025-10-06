@@ -1,3 +1,29 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get current directory in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables FIRST before any other imports
+const envPath = path.resolve(process.cwd(), '.env');
+console.log('📁 Looking for .env file at:', envPath);
+console.log('📁 Current working directory:', process.cwd());
+const result = dotenv.config({ path: envPath });
+if (result.error) {
+  console.error('❌ Error loading .env file:', result.error);
+} else {
+  console.log('✅ .env file loaded successfully');
+  console.log('📦 Parsed values:', result.parsed);
+}
+
+// Debug: Check if Gemini API key is loaded
+console.log('🔍 Environment check:');
+console.log('PORT:', process.env.PORT);
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? `${process.env.GEMINI_API_KEY.substring(0, 10)}...` : 'undefined');
+
+// Now import everything else
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -5,7 +31,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -14,6 +39,8 @@ import patientAccessRoutes from './routes/patientAccess.js';
 import medicalHistoryRoutes from './routes/medicalHistory.js';
 import prescriptionRoutes from './routes/prescription.js';
 import reportRoutes from './routes/reports.js';
+import aiAssistantRoutes from './routes/aiAssistant.js';
+import { summarizeReportWithGemini, testGeminiPrompt } from './services/geminiService.js';
 
 // Load environment variables
 dotenv.config();
@@ -77,6 +104,7 @@ app.use('/api/patient-access', patientAccessRoutes);
 app.use('/api/medical-history', medicalHistoryRoutes);
 app.use('/api/prescription', prescriptionRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/ai-assistant', aiAssistantRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -86,6 +114,51 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Gemini health check
+app.get('/api/health/gemini', async (req, res) => {
+  try {
+    const text = await summarizeReportWithGemini({
+      title: 'Health Check',
+      documentType: 'other',
+      ocrText: 'Sample text',
+      structuredData: { diagnosis: 'Sample' }
+    });
+    const usedRealKey = process.env.GEMINI_API_KEY && !/DUMMY_GEMINI_API_KEY_REPLACE_ME/i.test(process.env.GEMINI_API_KEY);
+    res.json({ success: true, usedRealKey, sample: text?.slice(0, 120) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e?.message || 'Gemini failed' });
+  }
+});
+
+// Direct Gemini test endpoint
+app.get('/api/health/gemini-test', async (req, res) => {
+  try {
+    const prompt = req.query.q || 'Say hello from Gemini';
+    const text = await testGeminiPrompt(prompt);
+    res.json({ success: true, text: text.slice(0, 500) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e?.message || 'Gemini test failed' });
+  }
+});
+
+// Database health endpoint
+app.get('/api/health/db', (req, res) => {
+  const state = mongoose.connection.readyState; // 0=disconnected,1=connected,2=connecting,3=disconnecting
+  const stateMap = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  res.json({
+    success: true,
+    mongo: {
+      readyState: state,
+      status: stateMap[state] || 'unknown'
+    }
   });
 });
 
@@ -107,7 +180,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`🚀 AayuLink Server running on port ${PORT}`);

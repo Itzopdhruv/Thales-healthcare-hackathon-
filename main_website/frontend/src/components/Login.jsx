@@ -812,7 +812,12 @@ const Login = () => {
 
             <Space.Compact style={{ width: '100%' }}>
               <Form.Item name="dateOfBirth" rules={[{ required: true }]} style={{ width: '50%' }}>
-                <DatePicker placeholder="dd/mm/yyyy" style={{ width: '100%' }} />
+                <DatePicker 
+                  placeholder="dd/mm/yyyy" 
+                  style={{ width: '100%' }} 
+                  getPopupContainer={(trigger) => trigger.parentElement}
+                  placement="bottomLeft"
+                />
               </Form.Item>
               <Form.Item name="bloodType" style={{ width: '50%' }}>
                 <Input placeholder="Blood Type (e.g., AB+)" />

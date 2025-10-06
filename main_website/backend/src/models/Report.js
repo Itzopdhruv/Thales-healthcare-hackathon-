@@ -256,6 +256,9 @@ ReportSchema.methods.canAccess = function(userId) {
   // Owner can always access
   if (this.uploadedBy.toString() === userId.toString()) return true;
   
+  // The patient whose report this is can access
+  if (this.patientId && this.patientId.toString() === userId.toString()) return true;
+  
   // Check if shared with user
   const sharedWithUser = this.sharedWith.find(share => 
     share.userId.toString() === userId.toString()

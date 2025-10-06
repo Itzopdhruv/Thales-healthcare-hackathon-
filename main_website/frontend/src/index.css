@@ -13,6 +13,15 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* DatePicker: keep default portal behavior to body to avoid clipping.
+   Avoid forcing position overrides that can hide the panel. */
+.ant-picker-dropdown {
+  z-index: 1050; /* slightly above modal content but no !important to allow antd control */
+}
+
+/* Remove previous forced positioning for prescription date picker */
+.prescription-date-picker { }
+
 a {
   font-weight: 500;
   color: #646cff;

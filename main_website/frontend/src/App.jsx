@@ -15,6 +15,7 @@ import TestPatientViewer from './pages/TestPatientViewer';
 import IconTest from './pages/IconTest';
 import ButtonTest from './pages/ButtonTest';
 import ProtectedRoute from './components/ProtectedRoute';
+import NationalHealthPulse from './pages/NationalHealthPulse';
 import './App.css';
 
 function App() {
@@ -93,6 +94,14 @@ function App() {
                       <Route 
                         path="/button-test" 
                         element={<ButtonTest />} 
+                      />
+                      <Route 
+                        path="/national-health-pulse" 
+                        element={
+                          <ProtectedRoute>
+                            <NationalHealthPulse />
+                          </ProtectedRoute>
+                        }
                       />
                       <Route path="/dashboard" element={<Navigate to="/patient-dashboard" replace />} />
                     </Routes>

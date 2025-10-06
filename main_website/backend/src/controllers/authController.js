@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import User from '../models/User.js';
-
+const jwt_token=process.env.JWT_SECRET ||"your-super-secret-jwt-key-change-this-in-production";
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ userId },jwt_token, { expiresIn: '7d' });
 };
 
 export const register = async (req, res) => {

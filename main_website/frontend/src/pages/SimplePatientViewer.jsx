@@ -22,7 +22,8 @@ import {
   Input as AntInput,
   Avatar,
   List,
-  Empty
+  Empty,
+  Tooltip
 } from 'antd';
 import { 
   LockOutlined, 
@@ -40,7 +41,10 @@ import {
   RobotOutlined,
   UserOutlined
 } from '@ant-design/icons';
+import { Collapse } from 'antd';
 import api from '../services/api';
+import NationalHealthPulse from './NationalHealthPulse';
+import AIAssistant from './AIAssistant';
 import './MedicalHistoryModal.css';
 
 const { Title, Text } = Typography;
@@ -122,7 +126,23 @@ const SimplePatientViewer = () => {
         const patientResponse = await api.get(`/patient/lookup/${patientId}`);
         console.log('Patient response:', patientResponse.data);
         if (patientResponse.data.success) {
-          setPatient(patientResponse.data.data.patient);
+          const p = patientResponse.data.data.patient || {};
+          // Normalize fields so Emergency Mode can read consistent keys
+          const mappedPatient = {
+            ...p,
+            name: p.name || p.fullName || p.profile?.fullName,
+            bloodType: p.bloodType || p.profile?.bloodType,
+            allergies: p.allergies || p.profile?.allergies || [],
+            existingMedicalConditions:
+              p.existingMedicalConditions ||
+              p.profile?.medicalConditions ||
+              p.chronicConditions || [],
+            emergencyContact:
+              p.emergencyContact ||
+              p.profile?.emergencyContact ||
+              null,
+          };
+          setPatient(mappedPatient);
         } else {
           console.log('Patient not found, using fallback data');
           // Use fallback data if patient not found
@@ -445,7 +465,8 @@ const SimplePatientViewer = () => {
     try {
       // Open in new tab (backend will verify auth via cookie/session)
       const token = localStorage.getItem('token');
-      const viewUrl = `http://localhost:3001/api/reports/${reportId}/view?token=${token}`;
+      // Backend runs on 5001 now; use direct URL to bypass proxy for new tab
+      const viewUrl = `http://localhost:5001/api/reports/${reportId}/view?token=${token}`;
       
       window.open(viewUrl, '_blank');
       
@@ -506,6 +527,7 @@ const SimplePatientViewer = () => {
   };
 
   const handleAskAIAboutReport = async (report) => {
+    if (chatLoading) return; // prevent double click
     try {
       // Set the selected report
       setSelectedReportForChat(report);
@@ -515,20 +537,38 @@ const SimplePatientViewer = () => {
       
       // Generate initial AI summary message
       setChatLoading(true);
+      console.log('[AskAI] starting for report', report?._id);
+      message.loading({ content: 'Generating AI summary...', key: 'askai', duration: 0 });
       
-      const initialMessage = {
+      // Ask backend to summarize with Gemini
+      const resp = await api.post('/reports/chat', {
+        message: 'Summarize this report in simple terms.',
+        patientId: patientId,
+        reportContext: '',
+        chatHistory: [],
+        reportId: report._id,
+      }, { timeout: 120000 });
+
+      // Debug: print full AI payload and message
+      console.log('[AskAI] raw response.data =', resp?.data);
+      console.log('[AskAI] message =', resp?.data?.message);
+
+      const aiMessage = {
         id: 1,
         type: 'ai',
-        content: `Hello! I've analyzed the **${report.title}** report. Let me provide you with a summary:\n\n📄 **Report Details:**\n- **Type:** ${report.documentType.replace('_', ' ').toUpperCase()}\n- **Uploaded:** ${new Date(report.uploadedAt).toLocaleDateString()}\n- **File:** ${report.originalFileName}\n${report.ocrData?.processingStatus === 'completed' ? `- **OCR Status:** ✅ Completed (${Math.round((report.ocrData?.confidence || 0) * 100)}% confidence)` : ''}\n\n💡 **What I can help you with:**\n- Summarize key findings from this report\n- Explain medical terms and values\n- Compare with normal ranges\n- Answer specific questions about the report\n- Provide health insights based on the data\n\n**Ask me anything about this report!** For example:\n- "What are the main findings?"\n- "Are there any abnormal values?"\n- "What does this mean for my health?"\n- "Should I be concerned about anything?"`,
+        content: resp?.data?.message || 'AI summary unavailable.',
         timestamp: new Date()
       };
-      
-      setChatMessages([initialMessage]);
+
+      setChatMessages([aiMessage]);
       setChatLoading(false);
+      message.success({ content: 'AI summary ready', key: 'askai' });
+      console.log('[AskAI] success');
       
     } catch (error) {
       console.error('Error initializing AI chat:', error);
-      message.error('Failed to start AI chat');
+      message.error({ content: `AI chat failed: ${error?.message || 'Unknown error'}`, key: 'askai' });
+      console.log('[AskAI] failed', error);
       setChatLoading(false);
     }
   };
@@ -632,7 +672,9 @@ const SimplePatientViewer = () => {
                   border: '1px solid rgba(255, 255, 255, 0.3)',
                   color: 'white',
                   backdropFilter: 'blur(10px)',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  position: 'relative',
+                  top: '-20px'
                 }}
                 hoverStyle={{
                   background: 'rgba(255, 255, 255, 0.3)',
@@ -689,7 +731,7 @@ const SimplePatientViewer = () => {
                     fontSize: '14px' 
                   }}>📋 Patient History</Text>
                 </div>
-                <div 
+                <div
                   style={{ 
                     padding: '14px 16px', 
                     cursor: 'pointer',
@@ -705,7 +747,7 @@ const SimplePatientViewer = () => {
                     e.target.style.background = '#fff';
                     e.target.style.transform = 'translateX(0)';
                   }}
-                  onClick={() => message.info('Emergency Mode - Feature coming soon!')}
+                  onClick={() => setActiveTab('emergency')}
                 >
                   <Text style={{ fontSize: '14px' }}>🚨 Emergency Mode</Text>
                 </div>
@@ -725,11 +767,12 @@ const SimplePatientViewer = () => {
                     e.target.style.background = '#fff';
                     e.target.style.transform = 'translateX(0)';
                   }}
-                  onClick={() => message.info('AI Assistant - Feature coming soon!')}
+                  onClick={() => setActiveTab('ai-assistant')}
                 >
                   <Text style={{ fontSize: '14px' }}>🧠 AI Assistant</Text>
                 </div>
-                <div 
+                {/* Removed duplicate 'Reports & Scans' button to avoid two tabs */}
+                {/* <div 
                   style={{ 
                     padding: '14px 16px', 
                     cursor: 'pointer',
@@ -748,7 +791,7 @@ const SimplePatientViewer = () => {
                   onClick={() => message.info('Reports & Scans - Feature coming soon!')}
                 >
                   <Text style={{ fontSize: '14px' }}>📄 Reports & Scans</Text>
-                </div>
+                </div> */}
                 <div 
                   style={{ 
                     padding: '14px 16px', 
@@ -835,7 +878,7 @@ const SimplePatientViewer = () => {
                   e.target.style.background = '#fff';
                   e.target.style.transform = 'translateX(0)';
                 }}
-                onClick={() => message.info('National Health Pulse - Feature coming soon!')}
+                onClick={() => setActiveTab('nhp')}
               >
                 <Text style={{ fontSize: '14px' }}>🌐 National Health Pulse</Text>
               </div>
@@ -890,8 +933,8 @@ const SimplePatientViewer = () => {
 
           {/* Main Content */}
           <Layout.Content style={{ padding: '24px', background: '#f0f2f5' }}>
-            {/* Patient Details */}
-            <Card style={{ 
+            {/* Patient Details - Hidden for National Health Pulse and AI Assistant tabs */}
+            {activeTab !== 'nhp' && activeTab !== 'ai-assistant' && (<Card style={{ 
               marginBottom: '24px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
@@ -974,10 +1017,10 @@ const SimplePatientViewer = () => {
                   </div>
                 </Col>
               </Row>
-            </Card>
+            </Card>)}
 
-            {/* AI-Powered Health Visualizer */}
-            <Card style={{ 
+            {/* AI-Powered Health Visualizer - Hidden for National Health Pulse, Emergency, and AI Assistant tabs */}
+            {activeTab !== 'emergency' && activeTab !== 'nhp' && activeTab !== 'ai-assistant' && (<Card style={{ 
               marginBottom: '24px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
@@ -1108,7 +1151,7 @@ const SimplePatientViewer = () => {
                   <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>Daily Habits</div>
                 </div>
               </div>
-            </Card>
+            </Card>)}
 
 
             {/* Medical Records Section */}
@@ -1124,6 +1167,8 @@ const SimplePatientViewer = () => {
                     height: '40px',
                     background: activeTab === 'history' ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)' : 
                                 activeTab === 'prescriptions' ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)' :
+                                activeTab === 'nhp' ? 'linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)' :
+                                activeTab === 'ai-assistant' ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)' :
                                 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
                     borderRadius: '10px',
                     display: 'flex',
@@ -1132,19 +1177,29 @@ const SimplePatientViewer = () => {
                     marginRight: '12px'
                   }}>
                     <Text style={{ color: 'white', fontSize: '18px' }}>
-                      {activeTab === 'history' ? '📋' : activeTab === 'prescriptions' ? '💊' : '📄'}
+                      {activeTab === 'history' ? '📋' : activeTab === 'prescriptions' ? '💊' : activeTab === 'nhp' ? '🌐' : activeTab === 'ai-assistant' ? '🤖' : '📄'}
                     </Text>
                   </div>
                   <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
                     {activeTab === 'history' ? 'Complete Medical History' : 
                      activeTab === 'prescriptions' ? 'e-Prescriptions' : 
-                     'Reports & Scans'}
+                     activeTab === 'reports' ? 'Reports & Scans' : 
+                     activeTab === 'nhp' ? 'National Health Pulse' : 
+                     activeTab === 'ai-assistant' ? 'AI Assistant Chat' : 'Emergency Mode'}
                   </Title>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   {activeTab === 'reports' && reports.length > 0 && (
                     <button 
-                      onClick={() => setChatModalVisible(true)}
+                      onClick={() => {
+                        // Prefer the most recent report for quick Ask AI
+                        const target = reports[0] || reports[reports.length - 1];
+                        if (target) {
+                          handleAskAIAboutReport(target);
+                        } else {
+                          setChatModalVisible(true);
+                        }
+                      }}
                       style={{
                         background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
                         color: 'white',
@@ -1164,7 +1219,7 @@ const SimplePatientViewer = () => {
                       Ask AI About Reports
                     </button>
                   )}
-                  <button 
+                  {activeTab !== 'emergency' && activeTab !== 'ai-assistant' && (<button 
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -1194,8 +1249,8 @@ const SimplePatientViewer = () => {
                     <PlusOutlined />
                     {activeTab === 'history' ? 'Add New Entry' : 
                      activeTab === 'prescriptions' ? 'Create New' : 
-                     'Upload Report'}
-                  </button>
+                     activeTab === 'reports' ? 'Upload Report' : ''}
+                  </button>)}
                 </div>
               </div>
               
@@ -1341,6 +1396,69 @@ const SimplePatientViewer = () => {
                       </div>
                     )
                   )}
+                  {activeTab === 'nhp' && (
+                    <div>
+                      <NationalHealthPulse />
+                    </div>
+                  )}
+
+                  {activeTab === 'ai-assistant' && (
+                    <div>
+                      {console.log("SimplePatientViewer: Passing patientId (abhaId) to AIAssistant:", patientId)}
+                      <AIAssistant patientId={patientId} />
+                    </div>
+                  )}
+
+                  {activeTab === 'emergency' && (
+                    <div style={{
+                      border: '2px solid #ff4d4f',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      background: 'linear-gradient(180deg,#fff5f5 0,#fff 100%)'
+                    }}>
+                      <div style={{
+                        background: '#cf1322',
+                        color: 'white',
+                        borderRadius: '10px',
+                        padding: '10px 16px',
+                        marginBottom: '16px',
+                        textAlign: 'center',
+                        fontWeight: 700,
+                        letterSpacing: 1
+                      }}>EMERGENCY MODE</div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ border: '1px solid #ffd6d6', borderRadius: 10, padding: 12 }}>
+                          <Text type="secondary" style={{ fontWeight: 600 }}>PATIENT NAME</Text>
+                          <div style={{ fontSize: 18, fontWeight: 700 }}>{patient?.name || 'Unknown'}</div>
+                        </div>
+                        <div style={{ border: '1px solid #ffd6d6', borderRadius: 10, padding: 12 }}>
+                          <Text type="secondary" style={{ fontWeight: 600 }}>BLOOD TYPE</Text>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: '#cf1322' }}>{patient?.bloodType || 'N/A'}</div>
+                        </div>
+                        <div style={{ gridColumn: '1/3', border: '1px solid #ffd6d6', borderRadius: 10, padding: 12 }}>
+                          <Text type="secondary" style={{ fontWeight: 600 }}>KNOWN ALLERGIES</Text>
+                          <div style={{ fontSize: 16 }}>{patient?.allergies?.join(', ') || 'None on record'}</div>
+                        </div>
+                        <div style={{ gridColumn: '1/3', border: '1px solid #ffd6d6', borderRadius: 10, padding: 12 }}>
+                          <Text type="secondary" style={{ fontWeight: 600 }}>EXISTING MEDICAL CONDITIONS</Text>
+                          <div style={{ fontSize: 16 }}>{
+                            (patient?.existingMedicalConditions && patient.existingMedicalConditions.length > 0)
+                              ? patient.existingMedicalConditions.join(', ')
+                              : (patient?.chronicConditions && patient.chronicConditions.length > 0)
+                                  ? patient.chronicConditions.join(', ')
+                                  : (patient?.profile?.medicalConditions && patient.profile.medicalConditions.length > 0)
+                                      ? patient.profile.medicalConditions.join(', ')
+                                      : 'None on record'
+                          }</div>
+                        </div>
+                        <div style={{ gridColumn: '1/3', border: '1px solid #ffd6d6', borderRadius: 10, padding: 12 }}>
+                          <Text type="secondary" style={{ fontWeight: 600 }}>EMERGENCY CONTACT</Text>
+                          <div style={{ fontSize: 16 }}>{patient?.emergencyContact?.name ? `${patient.emergencyContact.name} (${patient.emergencyContact.relationship}) - ${patient.emergencyContact.phone}` : 'Not provided'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {activeTab === 'prescriptions' && (
                     // Prescriptions Content
@@ -1377,19 +1495,9 @@ const SimplePatientViewer = () => {
                               padding: '24px', 
                               borderRadius: '12px',
                               border: '1px solid #e8f4fd',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                              transition: 'all 0.3s ease',
+                              boxShadow: 'none',
                               position: 'relative'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.transform = 'translateY(-2px)';
-                              e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.transform = 'translateY(0)';
-                              e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
-                            }}
-                            >
+                            }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ flex: 1 }}>
                                   <div style={{ marginBottom: '8px' }}>
@@ -1556,7 +1664,10 @@ const SimplePatientViewer = () => {
                           background: '#fff',
                           borderRadius: '12px',
                           border: '2px solid #722ed1',
-                          boxShadow: '0 4px 16px rgba(114, 46, 209, 0.15)'
+                          boxShadow: '0 4px 16px rgba(114, 46, 209, 0.15)',
+                          position: 'relative',
+                          zIndex: 1,
+                          overflow: 'visible'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <Title level={4} style={{ margin: 0, color: '#722ed1' }}>
@@ -1620,14 +1731,33 @@ const SimplePatientViewer = () => {
                                   name="documentType"
                                   label="Document Type"
                                   rules={[{ required: true, message: 'Please select document type' }]}
+                                  style={{ marginBottom: 0 }}
                                 >
-                                  <Select placeholder="Select document type">
-                                    <Option value="prescription">Prescription</Option>
-                                    <Option value="lab_report">Lab Report</Option>
-                                    <Option value="scan_report">Scan Report</Option>
-                                    <Option value="discharge_summary">Discharge Summary</Option>
-                                    <Option value="other">Other</Option>
-                                  </Select>
+                                  <select 
+                                    style={{
+                                      width: '100%',
+                                      padding: '8px 12px',
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: '6px',
+                                      fontSize: '14px',
+                                      backgroundColor: '#fff',
+                                      cursor: 'pointer'
+                                    }}
+                                    onChange={(e) => {
+                                      uploadReportForm.setFieldsValue({ documentType: e.target.value });
+                                    }}
+                                  >
+                                    <option value="">Select document type</option>
+                                    <option value="prescription">Prescription</option>
+                                    <option value="lab_report">Lab Report</option>
+                                    <option value="scan_report">Scan Report</option>
+                                    <option value="discharge_summary">Discharge Summary</option>
+                                    <option value="mri_report">MRI Report</option>
+                                    <option value="ct_scan">CT Scan</option>
+                                    <option value="x_ray">X-Ray</option>
+                                    <option value="ultrasound">Ultrasound</option>
+                                    <option value="other">Other</option>
+                                  </select>
                                 </Form.Item>
                               </Col>
                               <Col span={12}>
@@ -1866,6 +1996,69 @@ const SimplePatientViewer = () => {
                                   </Button>
                                 </div>
                               </div>
+
+                              {/* Collapsible AI Summary / Insights */}
+                              <div style={{ marginTop: '12px' }}>
+                                <Card
+                                  style={{
+                                    borderRadius: 14,
+                                    border: '1px solid #e6eaff',
+                                    background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+                                    boxShadow: '0 8px 24px rgba(47, 84, 235, 0.08)'
+                                  }}
+                                  bodyStyle={{ padding: 0 }}
+                                >
+                                  <Collapse
+                                    bordered={false}
+                                    defaultActiveKey={[]}
+                                    style={{ borderRadius: 14 }}
+                                    items={[{
+                                      key: `summary-${report._id}`,
+                                      label: (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                          <div style={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 10,
+                                            background: 'linear-gradient(135deg, #2f54eb 0%, #9254de 100%)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '0 6px 16px rgba(46, 84, 235, 0.25)'
+                                          }}>
+                                            <RobotOutlined style={{ color: '#fff' }} />
+                                          </div>
+                                          <div>
+                                            <div style={{ fontWeight: 700, color: '#1d39c4' }}>AI Summary / Insights</div>
+                                            <div style={{ fontSize: 12, color: '#8c8c8c' }}>Auto-generated overview with highlights and next steps</div>
+                                          </div>
+                                        </div>
+                                      ),
+                                      children: (
+                                        <div style={{ padding: '16px 20px 20px 20px' }}>
+                                          <div
+                                            id={`ai-summary-${report._id}`}
+                                            style={{
+                                              maxHeight: 260,
+                                              overflowY: 'auto',
+                                              whiteSpace: 'pre-wrap',
+                                              color: '#334155',
+                                              background: '#fafcff',
+                                              border: '1px dashed #d6e4ff',
+                                              borderRadius: 12,
+                                              padding: 16
+                                            }}
+                                          >
+                                            {(selectedReportForChat && selectedReportForChat._id === report._id && chatMessages.length > 0)
+                                              ? chatMessages[chatMessages.length - 1]?.content
+                                              : 'Click Ask AI to generate a summary for this report.'}
+                                          </div>
+                                        </div>
+                                      )
+                                    }]}
+                                  />
+                                </Card>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1936,8 +2129,16 @@ const SimplePatientViewer = () => {
             name="date"
             label="Date"
             rules={[{ required: true, message: 'Please select a date' }]}
+            getValueFromEvent={(e) => e.target.value ? new Date(e.target.value) : null}
+            getValueProps={(value) => ({
+              value: value ? new Date(value).toISOString().split('T')[0] : ''
+            })}
           >
-            <DatePicker style={{ width: '100%' }} />
+            <Input 
+              type="date" 
+              style={{ width: '100%' }}
+              max={new Date().toISOString().split('T')[0]}
+            />
           </Form.Item>
           
           <Form.Item
@@ -2031,8 +2232,16 @@ const SimplePatientViewer = () => {
                 name="issuedDate"
                 label="Issued Date"
                 rules={[{ required: true, message: 'Please select a date' }]}
+                getValueFromEvent={(e) => e.target.value ? new Date(e.target.value) : null}
+                getValueProps={(value) => ({
+                  value: value ? new Date(value).toISOString().split('T')[0] : ''
+                })}
               >
-                <DatePicker style={{ width: '100%' }} />
+                <Input 
+                  type="date" 
+                  style={{ width: '100%' }}
+                  max={new Date().toISOString().split('T')[0]}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -2320,8 +2529,16 @@ const SimplePatientViewer = () => {
                 name="issuedDate"
                 label="Issued Date"
                 rules={[{ required: true, message: 'Please select a date' }]}
+                getValueFromEvent={(e) => e.target.value ? new Date(e.target.value) : null}
+                getValueProps={(value) => ({
+                  value: value ? new Date(value).toISOString().split('T')[0] : ''
+                })}
               >
-                <DatePicker style={{ width: '100%' }} />
+                <Input 
+                  type="date" 
+                  style={{ width: '100%' }}
+                  max={new Date().toISOString().split('T')[0]}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -2566,7 +2783,14 @@ const SimplePatientViewer = () => {
             shape="circle"
             size="large"
             icon={<MessageOutlined />}
-            onClick={() => setChatModalVisible(true)}
+            onClick={() => {
+              const target = reports[0] || reports[reports.length - 1];
+              if (target) {
+                handleAskAIAboutReport(target);
+              } else {
+                setChatModalVisible(true);
+              }
+            }}
             style={{
               background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
               borderColor: '#722ed1',
