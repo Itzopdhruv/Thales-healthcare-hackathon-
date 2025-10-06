@@ -19,7 +19,7 @@ export const uploadReport = async (req, res) => {
     }
 
     const { abhaId, documentType, title, description } = req.body;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     // Validate required fields
     if (!abhaId || !documentType || !title) {
@@ -42,6 +42,7 @@ export const uploadReport = async (req, res) => {
     const reportData = {
       abhaId,
       patientId: patient._id,
+      uploadedBy: userId,
       documentType,
       title,
       description: description || '',
@@ -50,7 +51,6 @@ export const uploadReport = async (req, res) => {
       filePath: req.file.path,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      uploadedBy: userId,
       tags: [documentType],
       category: getCategoryFromDocumentType(documentType)
     };
@@ -194,7 +194,7 @@ export const getPatientReports = async (req, res) => {
   try {
     const { abhaId } = req.params;
     const { documentType, category, page = 1, limit = 10 } = req.query;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     // Build query
     const query = { abhaId, isActive: true };
@@ -251,7 +251,7 @@ export const getPatientReports = async (req, res) => {
 export const getReportById = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const report = await Report.findById(reportId)
       .populate('uploadedBy', 'name email')
@@ -288,14 +288,14 @@ export const getReportById = async (req, res) => {
 };
 
 /**
- * Download report file
+ * View report file in browser
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
-export const downloadReport = async (req, res) => {
+export const viewReport = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const report = await Report.findById(reportId);
     if (!report) {
@@ -306,7 +306,68 @@ export const downloadReport = async (req, res) => {
     }
 
     // Check access permissions
-    if (!report.canAccess(userId)) {
+    const isUploader = report.uploadedBy.toString() === userId.toString();
+    const isPatient = report.patientId.toString() === userId.toString();
+    const isShared = report.sharedWith.some(share => share.userId.toString() === userId.toString());
+    
+    if (!isUploader && !isPatient && !isShared) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this report'
+      });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(report.filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server'
+      });
+    }
+
+    // Set appropriate headers for viewing in browser (inline)
+    res.setHeader('Content-Type', report.mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${report.originalFileName}"`);
+    res.setHeader('Content-Length', report.fileSize);
+
+    // Stream the file
+    const fileStream = fs.createReadStream(report.filePath);
+    fileStream.pipe(res);
+
+  } catch (error) {
+    console.error('View report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to view report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Download report file
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const downloadReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.userId;
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    // Check access permissions
+    const isUploader = report.uploadedBy.toString() === userId.toString();
+    const isPatient = report.patientId.toString() === userId.toString();
+    const isShared = report.sharedWith.some(share => share.userId.toString() === userId.toString());
+    
+    if (!isUploader && !isPatient && !isShared) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this report'
@@ -348,7 +409,7 @@ export const downloadReport = async (req, res) => {
 export const updateReport = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.userId;
     const updates = req.body;
 
     const report = await Report.findById(reportId);
@@ -407,7 +468,7 @@ export const updateReport = async (req, res) => {
 export const deleteReport = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const report = await Report.findById(reportId);
     if (!report) {
@@ -456,7 +517,7 @@ export const deleteReport = async (req, res) => {
 export const getOCRStatus = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const report = await Report.findById(reportId)
       .select('ocrData.processingStatus ocrData.confidence ocrData.errorMessage ocrData.processedAt');

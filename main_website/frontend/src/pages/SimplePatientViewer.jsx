@@ -56,12 +56,13 @@ const SimplePatientViewer = () => {
   const [accessGranted, setAccessGranted] = useState(false);
   const [addEntryModalVisible, setAddEntryModalVisible] = useState(false);
   const [addPrescriptionModalVisible, setAddPrescriptionModalVisible] = useState(false);
-  const [uploadReportModalVisible, setUploadReportModalVisible] = useState(false);
+  const [showUploadInterface, setShowUploadInterface] = useState(false);
   const [chatModalVisible, setChatModalVisible] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatToggleVisible, setChatToggleVisible] = useState(false);
+  const [selectedReportForChat, setSelectedReportForChat] = useState(null);
   
   
   // Form states
@@ -404,9 +405,9 @@ const SimplePatientViewer = () => {
       
       if (response.data.success) {
         message.success('Report uploaded successfully! Processing OCR...');
-        setUploadReportModalVisible(false);
+        setShowUploadInterface(false);
         uploadReportForm.resetFields();
-        fetchPatientData(); // Refresh data
+        fetchPatientData(); // Refresh data to show new report
         
         // Show chat toggle and open chat modal after successful upload
         setChatToggleVisible(true);
@@ -440,17 +441,42 @@ const SimplePatientViewer = () => {
     }
   };
 
+  const handleViewReport = (reportId) => {
+    try {
+      // Open in new tab (backend will verify auth via cookie/session)
+      const token = localStorage.getItem('token');
+      const viewUrl = `http://localhost:3001/api/reports/${reportId}/view?token=${token}`;
+      
+      window.open(viewUrl, '_blank');
+      
+      message.success('Opening report in new tab...');
+    } catch (error) {
+      console.error('Error viewing report:', error);
+      message.error('Failed to view report');
+    }
+  };
+
   const handleDownloadReport = async (reportId) => {
     try {
       const response = await api.get(`/reports/${reportId}/download`, {
         responseType: 'blob'
       });
       
+      // Get filename from content-disposition header or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `report_${reportId}.pdf`;
+      if (contentDisposition) {
+        const matches = /filename="([^"]+)"/.exec(contentDisposition);
+        if (matches && matches[1]) {
+          filename = matches[1];
+        }
+      }
+      
       // Create blob link to download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `report_${reportId}.pdf`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -479,6 +505,34 @@ const SimplePatientViewer = () => {
     }
   };
 
+  const handleAskAIAboutReport = async (report) => {
+    try {
+      // Set the selected report
+      setSelectedReportForChat(report);
+      
+      // Open chat modal
+      setChatModalVisible(true);
+      
+      // Generate initial AI summary message
+      setChatLoading(true);
+      
+      const initialMessage = {
+        id: 1,
+        type: 'ai',
+        content: `Hello! I've analyzed the **${report.title}** report. Let me provide you with a summary:\n\n📄 **Report Details:**\n- **Type:** ${report.documentType.replace('_', ' ').toUpperCase()}\n- **Uploaded:** ${new Date(report.uploadedAt).toLocaleDateString()}\n- **File:** ${report.originalFileName}\n${report.ocrData?.processingStatus === 'completed' ? `- **OCR Status:** ✅ Completed (${Math.round((report.ocrData?.confidence || 0) * 100)}% confidence)` : ''}\n\n💡 **What I can help you with:**\n- Summarize key findings from this report\n- Explain medical terms and values\n- Compare with normal ranges\n- Answer specific questions about the report\n- Provide health insights based on the data\n\n**Ask me anything about this report!** For example:\n- "What are the main findings?"\n- "Are there any abnormal values?"\n- "What does this mean for my health?"\n- "Should I be concerned about anything?"`,
+        timestamp: new Date()
+      };
+      
+      setChatMessages([initialMessage]);
+      setChatLoading(false);
+      
+    } catch (error) {
+      console.error('Error initializing AI chat:', error);
+      message.error('Failed to start AI chat');
+      setChatLoading(false);
+    }
+  };
+
   const handleChatSubmit = async () => {
     if (!chatInput.trim()) return;
     
@@ -494,15 +548,17 @@ const SimplePatientViewer = () => {
     setChatLoading(true);
     
     try {
-      // Get the latest uploaded report for context
-      const latestReport = reports[reports.length - 1];
-      const reportContext = latestReport ? `
+      // Use selected report for context, or fall back to latest report
+      const contextReport = selectedReportForChat || reports[reports.length - 1];
+      const reportContext = contextReport ? `
         Patient: ${patient?.name || 'Unknown'}
-        Report Title: ${latestReport.title}
-        Document Type: ${latestReport.documentType}
-        Uploaded: ${new Date(latestReport.uploadedAt).toLocaleDateString()}
-        OCR Status: ${latestReport.ocrData?.processingStatus || 'Unknown'}
-        ${latestReport.ocrData?.structuredData ? `Extracted Data: ${JSON.stringify(latestReport.ocrData.structuredData, null, 2)}` : ''}
+        Report Title: ${contextReport.title}
+        Document Type: ${contextReport.documentType}
+        Uploaded: ${new Date(contextReport.uploadedAt).toLocaleDateString()}
+        OCR Status: ${contextReport.ocrData?.processingStatus || 'Unknown'}
+        File Name: ${contextReport.originalFileName}
+        ${contextReport.ocrData?.structuredData ? `Extracted Data: ${JSON.stringify(contextReport.ocrData.structuredData, null, 2)}` : ''}
+        ${contextReport.description ? `Description: ${contextReport.description}` : ''}
       ` : '';
       
       const response = await api.post('/reports/chat', {
@@ -525,7 +581,7 @@ const SimplePatientViewer = () => {
       const errorMessage = {
         id: Date.now() + 1,
         type: 'ai',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: 'Sorry, I encountered an error. Please try again. Please make sure you\'re asking health-related questions about the uploaded report.',
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);
@@ -1117,7 +1173,7 @@ const SimplePatientViewer = () => {
                       } else if (activeTab === 'prescriptions') {
                         setAddPrescriptionModalVisible(true);
                       } else if (activeTab === 'reports') {
-                        setUploadReportModalVisible(true);
+                        setShowUploadInterface(true);
                       }
                     }}
                   style={{
@@ -1491,6 +1547,158 @@ const SimplePatientViewer = () => {
                           Upload and manage medical documents with AI-powered scanning
                         </Text>
                       </div>
+
+                      {/* Upload Interface */}
+                      {showUploadInterface && (
+                        <div style={{
+                          marginBottom: '24px',
+                          padding: '24px',
+                          background: '#fff',
+                          borderRadius: '12px',
+                          border: '2px solid #722ed1',
+                          boxShadow: '0 4px 16px rgba(114, 46, 209, 0.15)'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <Title level={4} style={{ margin: 0, color: '#722ed1' }}>
+                              Upload Medical Report
+                            </Title>
+                            <Button 
+                              type="text" 
+                              onClick={() => {
+                                setShowUploadInterface(false);
+                                uploadReportForm.resetFields();
+                              }}
+                              style={{ color: '#999' }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+
+                          <Form
+                            form={uploadReportForm}
+                            layout="vertical"
+                            onFinish={handleUploadReport}
+                          >
+                            <Form.Item
+                              name="file"
+                              label="Upload Document"
+                              rules={[{ required: true, message: 'Please upload a file' }]}
+                              valuePropName="fileList"
+                              getValueFromEvent={(e) => {
+                                if (Array.isArray(e)) {
+                                  return e;
+                                }
+                                return e && e.fileList;
+                              }}
+                            >
+                              <Upload.Dragger
+                                name="file"
+                                multiple={false}
+                                accept="image/*,.pdf"
+                                beforeUpload={() => false}
+                                showUploadList={{
+                                  showPreviewIcon: false,
+                                  showRemoveIcon: true,
+                                }}
+                              >
+                                <p className="ant-upload-drag-icon">
+                                  <UploadOutlined style={{ fontSize: '48px', color: '#722ed1' }} />
+                                </p>
+                                <p className="ant-upload-text" style={{ fontSize: '16px', fontWeight: '600' }}>
+                                  Click or drag file to this area to upload
+                                </p>
+                                <p className="ant-upload-hint" style={{ color: '#666' }}>
+                                  Support for single file upload. Images (JPG, PNG, GIF, WebP) and PDF files are supported.
+                                  Maximum file size: 10MB
+                                </p>
+                              </Upload.Dragger>
+                            </Form.Item>
+
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Form.Item
+                                  name="documentType"
+                                  label="Document Type"
+                                  rules={[{ required: true, message: 'Please select document type' }]}
+                                >
+                                  <Select placeholder="Select document type">
+                                    <Option value="prescription">Prescription</Option>
+                                    <Option value="lab_report">Lab Report</Option>
+                                    <Option value="scan_report">Scan Report</Option>
+                                    <Option value="discharge_summary">Discharge Summary</Option>
+                                    <Option value="other">Other</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item
+                                  name="title"
+                                  label="Report Title"
+                                  rules={[{ required: true, message: 'Please enter report title' }]}
+                                >
+                                  <Input placeholder="e.g., Blood Test Report - Jan 2025" />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+
+                            <Form.Item
+                              name="description"
+                              label="Description (Optional)"
+                            >
+                              <Input.TextArea
+                                rows={3}
+                                placeholder="Brief description of the report or any additional notes..."
+                              />
+                            </Form.Item>
+
+                            <div style={{
+                              padding: '16px',
+                              background: 'linear-gradient(135deg, #f8fbff 0%, #f0f9ff 100%)',
+                              borderRadius: '8px',
+                              border: '1px solid #e6f7ff',
+                              marginBottom: '16px'
+                            }}>
+                              <Text style={{ fontSize: '14px', color: '#1890ff', fontWeight: '500' }}>
+                                🤖 AI-Powered Processing
+                              </Text>
+                              <div style={{ marginTop: '8px' }}>
+                                <Text style={{ fontSize: '13px', color: '#666' }}>
+                                  Your document will be automatically processed using Gemini AI to extract:
+                                </Text>
+                                <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '13px', color: '#666' }}>
+                                  <li>Patient information and medical data</li>
+                                  <li>Diagnosis and treatment details</li>
+                                  <li>Lab values and vital signs</li>
+                                  <li>Medication information</li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                              <Button
+                                onClick={() => {
+                                  setShowUploadInterface(false);
+                                  uploadReportForm.resetFields();
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={loading}
+                                icon={<UploadOutlined />}
+                                style={{
+                                  background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+                                  borderColor: '#722ed1'
+                                }}
+                              >
+                                Upload & Process
+                              </Button>
+                            </div>
+                          </Form>
+                        </div>
+                      )}
                       
                       {reports.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1596,7 +1804,7 @@ const SimplePatientViewer = () => {
                                   )}
                                 </div>
                                 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                   <Button 
                                     type="text" 
                                     icon={<EyeOutlined />}
@@ -1607,9 +1815,7 @@ const SimplePatientViewer = () => {
                                       height: '32px',
                                       padding: '0 12px'
                                     }}
-                                    onClick={() => {
-                                      message.info('View report details');
-                                    }}
+                                    onClick={() => handleViewReport(report._id)}
                                   >
                                     View
                                   </Button>
@@ -1627,6 +1833,21 @@ const SimplePatientViewer = () => {
                                     onClick={() => handleDownloadReport(report._id)}
                                   >
                                     Download
+                                  </Button>
+                                  
+                                  <Button 
+                                    type="text" 
+                                    icon={<RobotOutlined />}
+                                    style={{ 
+                                      color: '#1890ff',
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: '6px',
+                                      height: '32px',
+                                      padding: '0 12px'
+                                    }}
+                                    onClick={() => handleAskAIAboutReport(report)}
+                                  >
+                                    Ask AI
                                   </Button>
                                   
                                   <Button 
@@ -1678,7 +1899,7 @@ const SimplePatientViewer = () => {
                               e.preventDefault();
                               e.stopPropagation();
                               console.log('Upload first report button clicked');
-                              setUploadReportModalVisible(true);
+                              setShowUploadInterface(true);
                             }}
                           >
                             Upload first report
@@ -2200,9 +2421,13 @@ const SimplePatientViewer = () => {
       {/* AI Chat Modal */}
       <Modal
         title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <RobotOutlined style={{ color: '#722ed1', fontSize: '20px' }} />
-            <span>AI Health Assistant</span>
+            <span>
+              {selectedReportForChat 
+                ? `AI Assistant - ${selectedReportForChat.title}` 
+                : 'AI Health Assistant'}
+            </span>
             <Tag color="purple" style={{ marginLeft: 'auto' }}>Health Domain Only</Tag>
           </div>
         }
@@ -2368,146 +2593,6 @@ const SimplePatientViewer = () => {
           </div>
         </div>
       )}
-
-      {/* Upload Report Modal */}
-      <Modal
-        title="Upload Medical Report"
-        open={uploadReportModalVisible}
-        onCancel={() => {
-          setUploadReportModalVisible(false);
-          uploadReportForm.resetFields();
-        }}
-        footer={null}
-        centered
-        width={700}
-      >
-        <Form
-          form={uploadReportForm}
-          layout="vertical"
-          onFinish={handleUploadReport}
-        >
-          <Form.Item
-            name="file"
-            label="Upload Document"
-            rules={[{ required: true, message: 'Please upload a file' }]}
-            valuePropName="fileList"
-            getValueFromEvent={(e) => {
-              if (Array.isArray(e)) {
-                return e;
-              }
-              return e && e.fileList;
-            }}
-          >
-            <Upload.Dragger
-              name="file"
-              multiple={false}
-              accept="image/*,.pdf"
-              beforeUpload={() => false}
-              showUploadList={{
-                showPreviewIcon: false,
-                showRemoveIcon: true,
-              }}
-            >
-              <p className="ant-upload-drag-icon">
-                <UploadOutlined style={{ fontSize: '48px', color: '#722ed1' }} />
-              </p>
-              <p className="ant-upload-text" style={{ fontSize: '16px', fontWeight: '600' }}>
-                Click or drag file to this area to upload
-              </p>
-              <p className="ant-upload-hint" style={{ color: '#666' }}>
-                Support for single file upload. Images (JPG, PNG, GIF, WebP) and PDF files are supported.
-                Maximum file size: 10MB
-              </p>
-            </Upload.Dragger>
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="documentType"
-                label="Document Type"
-                rules={[{ required: true, message: 'Please select document type' }]}
-              >
-                <Select placeholder="Select document type">
-                  <Option value="prescription">Prescription</Option>
-                  <Option value="lab_report">Lab Report</Option>
-                  <Option value="scan_report">Scan Report</Option>
-                  <Option value="discharge_summary">Discharge Summary</Option>
-                  <Option value="other">Other</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="title"
-                label="Report Title"
-                rules={[{ required: true, message: 'Please enter report title' }]}
-              >
-                <Input placeholder="e.g., Blood Test Report - Jan 2025" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="description"
-            label="Description (Optional)"
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Brief description of the report or any additional notes..."
-            />
-          </Form.Item>
-
-          <div style={{
-            padding: '16px',
-            background: 'linear-gradient(135deg, #f8fbff 0%, #f0f9ff 100%)',
-            borderRadius: '8px',
-            border: '1px solid #e6f7ff',
-            marginBottom: '16px'
-          }}>
-            <Text style={{ fontSize: '14px', color: '#1890ff', fontWeight: '500' }}>
-              🤖 AI-Powered Processing
-            </Text>
-            <div style={{ marginTop: '8px' }}>
-              <Text style={{ fontSize: '13px', color: '#666' }}>
-                Your document will be automatically processed using Gemini AI to extract:
-              </Text>
-              <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '13px', color: '#666' }}>
-                <li>Patient information and medical data</li>
-                <li>Diagnosis and treatment details</li>
-                <li>Lab values and vital signs</li>
-                <li>Medication information</li>
-              </ul>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'right', marginTop: '24px' }}>
-            <Space>
-              <Button
-                onClick={() => {
-                  setUploadReportModalVisible(false);
-                  uploadReportForm.resetFields();
-                }}
-                style={{ marginRight: 8 }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                icon={<UploadOutlined />}
-                style={{
-                  background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
-                  borderColor: '#722ed1'
-                }}
-              >
-                Upload & Process
-              </Button>
-            </Space>
-          </div>
-        </Form>
-      </Modal>
     </Layout>
   );
 };
