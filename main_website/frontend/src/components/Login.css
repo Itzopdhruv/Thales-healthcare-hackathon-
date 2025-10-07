@@ -567,6 +567,18 @@
   overflow: hidden;
 }
 
+/* OTP Step - nicer layout */
+.otp-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.otp-back-btn {
+  height: 50px;
+  border-radius: 12px;
+  padding: 0 20px;
+}
+
 .login-button::before,
 .signup-button::before {
   content: '';

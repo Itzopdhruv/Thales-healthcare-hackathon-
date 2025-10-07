@@ -98,6 +98,52 @@ export const patientAPI = {
     } catch (error) {
       throw error.response?.data || { success: false, error: 'Failed to get patient context' };
     }
+  },
+
+  // Fetch prescriptions for a given ABHA ID
+  getPrescriptions: async (abhaId, params = {}) => {
+    const response = await api.get(`/prescription/${abhaId}`, { params });
+    return response.data;
+  }
+};
+
+// Patient OTP Auth API
+export const patientAuthAPI = {
+  requestOtp: async ({ name, phone, abhaId }) => {
+    const response = await api.post('/patient-auth/request-otp', { name, phone, abhaId });
+    return response.data;
+  },
+  verifyOtp: async ({ name, phone, abhaId, otp }) => {
+    const response = await api.post('/patient-auth/verify-otp', { name, phone, abhaId, otp });
+    return response.data;
+  }
+};
+
+// AI Doctor API
+export const aiDoctorAPI = {
+  // Analyze medical input (audio, image, text)
+  analyzeMedicalInput: async (data) => {
+    const response = await api.post('/ai-doctor/analyze', data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 120000 // 2 minutes for AI processing
+    });
+    return response.data;
+  },
+
+  // Get audio response file
+  getAudioResponse: async (filename) => {
+    const response = await api.get(`/ai-doctor/audio/${filename}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Check AI Doctor service health
+  checkHealth: async () => {
+    const response = await api.get('/ai-doctor/health');
+    return response.data;
   }
 };
 

@@ -25,7 +25,11 @@ const Login = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [inputFocus, setInputFocus] = useState('');
   
-  const { login, register } = useAuth();
+  const { login, register, patientLoginRequestOtp, patientLoginVerifyOtp } = useAuth();
+  const [patientOtpRequested, setPatientOtpRequested] = useState(false);
+  const [patientName, setPatientName] = useState('');
+  const [patientPhone, setPatientPhone] = useState('');
+  const [patientOtp, setPatientOtp] = useState('');
   const navigate = useNavigate();
 
   const onLogin = async (values) => {
@@ -97,6 +101,7 @@ const Login = () => {
       username: values.username, // Use username as unique identifier
       name: values.fullName || values.username, // Use fullName if provided, otherwise username
       email: values.email || values.username + '@example.com', // Use email if provided, otherwise generate
+      phone: values.phone, // include phone for individual signup
       password: values.password,
       role: (activeTab === 'admin' || activeTab === 'register-admin') ? 'admin' : 'patient'
     };
@@ -163,58 +168,75 @@ const Login = () => {
       label: 'Individual',
       children: (
         <div>
-          <Form
-            name="login"
-            onFinish={onLogin}
-            layout="vertical"
-            size="large"
-          >
-            <Form.Item
-              name="email"
-              rules={[
-                { required: true, message: 'Please input your email!' },
-                { type: 'email', message: 'Please enter a valid email!' }
-              ]}
+          {!patientOtpRequested ? (
+            <Form
+              name="patient-otp-request"
+              layout="vertical"
+              size="large"
+              onFinish={async (values) => {
+                setLoading(true);
+                setPatientName(values.name);
+                setPatientPhone(values.phone);
+                const res = await patientLoginRequestOtp({ name: values.name, phone: values.phone });
+                setLoading(false);
+                if (res.success) {
+                  setPatientOtpRequested(true);
+                  message.success('OTP sent');
+                } else {
+                  message.error(res.error || 'Failed to send OTP');
+                }
+              }}
             >
-              <Input
-                prefix={<MailOutlined className={`input-icon ${inputFocus === 'email' ? 'focused' : ''}`} />}
-                placeholder="Enter your email"
-                onFocus={() => setInputFocus('email')}
-                onBlur={() => setInputFocus('')}
-                className={`enhanced-input ${inputFocus === 'email' ? 'focused' : ''}`}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: 'Please input your password!' }]}
+              <Form.Item name="name" rules={[{ required: true, message: 'Enter your name' }]}>
+                <Input prefix={<UserOutlined />} placeholder="Full Name" />
+              </Form.Item>
+              <Form.Item name="phone" rules={[{ required: true, message: 'Enter phone number' }]}>
+                <Input prefix={<PhoneOutlined />} placeholder="Phone Number" />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} block>
+                  Request OTP
+                </Button>
+              </Form.Item>
+            </Form>
+          ) : (
+            <Form
+              name="patient-otp-verify"
+              layout="vertical"
+              size="large"
+              onFinish={async (values) => {
+                setLoading(true);
+                const res = await patientLoginVerifyOtp({ name: patientName, phone: patientPhone, otp: values.otp });
+                setLoading(false);
+                if (res.success) {
+                  message.success('Login successful');
+                  navigate('/patient-dashboard');
+                } else {
+                  message.error(res.error || 'OTP verification failed');
+                }
+              }}
             >
-              <Input.Password
-                prefix={<LockOutlined className={`input-icon ${inputFocus === 'password' ? 'focused' : ''}`} />}
-                placeholder="Enter your password"
-                onFocus={() => setInputFocus('password')}
-                onBlur={() => setInputFocus('')}
-                className={`enhanced-input ${inputFocus === 'password' ? 'focused' : ''}`}
-              />
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                block
-                className={`login-button ${isTransitioning ? 'processing' : ''}`}
-                disabled={isTransitioning}
-              >
-                {isTransitioning ? (
-                  <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
-                ) : (
-                  'Login'
-                )}
-              </Button>
-            </Form.Item>
-          </Form>
+              <Form.Item>
+                <Input value={patientName} disabled prefix={<UserOutlined />} />
+              </Form.Item>
+              <Form.Item>
+                <Input value={patientPhone} disabled prefix={<PhoneOutlined />} />
+              </Form.Item>
+              <Form.Item name="otp" rules={[{ required: true, message: 'Enter OTP' }]}>
+                <Input prefix={<LockOutlined />} placeholder="Enter OTP (081106)" />
+              </Form.Item>
+              <Form.Item>
+                <div className="otp-actions">
+                  <Button className="otp-back-btn" onClick={() => setPatientOtpRequested(false)}>
+                    Back
+                  </Button>
+                  <Button type="primary" htmlType="submit" loading={loading} className="login-button" style={{ flex: 1 }}>
+                    Verify & Login
+                  </Button>
+                </div>
+              </Form.Item>
+            </Form>
+          )}
 
           <div className="register-link">
             <Text>Don't have an account? </Text>
@@ -424,6 +446,16 @@ const Login = () => {
               <Input
                 prefix={<MailOutlined />}
                 placeholder="Enter your email"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="phone"
+              rules={[{ required: true, message: 'Please input your phone number!' }]}
+            >
+              <Input
+                prefix={<PhoneOutlined />}
+                placeholder="Enter your phone number"
               />
             </Form.Item>
 

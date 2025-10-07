@@ -1,5 +1,6 @@
 import MedicalHistory from '../models/MedicalHistory.js';
 import User from '../models/User.js';
+import Patient from '../models/Patient.js';
 import { validationResult } from 'express-validator';
 
 export const createMedicalHistoryEntry = async (req, res) => {
@@ -29,8 +30,11 @@ export const createMedicalHistoryEntry = async (req, res) => {
 
     const adminId = req.userId;
 
-    // Find patient by ABHA ID
-    const patient = await User.findOne({ abhaId, role: 'patient' });
+    // Find patient by ABHA ID (prefer Patient, fallback to legacy User)
+    let patient = await Patient.findOne({ abhaId });
+    if (!patient) {
+      patient = await User.findOne({ abhaId, role: 'patient' });
+    }
     if (!patient) {
       return res.status(404).json({
         success: false,
@@ -85,8 +89,11 @@ export const getMedicalHistory = async (req, res) => {
     const { abhaId } = req.params;
     const { page = 1, limit = 10, entryType } = req.query;
 
-    // Find patient by ABHA ID
-    const patient = await User.findOne({ abhaId, role: 'patient' });
+    // Find patient by ABHA ID (prefer Patient, fallback to legacy User)
+    let patient = await Patient.findOne({ abhaId });
+    if (!patient) {
+      patient = await User.findOne({ abhaId, role: 'patient' });
+    }
     if (!patient) {
       return res.status(404).json({
         success: false,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Layout, 
   Card, 
@@ -36,6 +36,8 @@ import {
   LogoutOutlined
 } from '@ant-design/icons';
 import './AdminPatientView.css';
+import { useSearchParams } from 'react-router-dom';
+import { patientAPI } from '../services/api';
 
 const { Header, Content, Sider } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -43,17 +45,25 @@ const { Title, Text, Paragraph } = Typography;
 const AdminPatientView = () => {
   const [isAddEntryVisible, setIsAddEntryVisible] = useState(false);
   const [form] = Form.useForm();
+  const [searchParams] = useSearchParams();
+  const [patientData, setPatientData] = useState(null);
 
-  // Mock patient data
-  const patientData = {
-    name: 'Tanish Kumar',
-    abhaId: '12-3456-7890-0001',
-    age: 20,
-    gender: 'Male',
-    bloodType: 'AB+',
-    phone: '+91 98765 43210',
-    emergencyContact: 'Mrs. Kumar - +91 98765 43211'
-  };
+  // Load patient by ABHA ID from query param: ?abhaId=XX-XX-XX-XX
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const abhaId = searchParams.get('abhaId');
+        if (!abhaId) return;
+        const res = await patientAPI.lookupPatient(abhaId);
+        const p = res?.data?.patient;
+        if (p) setPatientData(p);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load patient for admin view', e);
+      }
+    };
+    load();
+  }, [searchParams]);
 
   const medicalHistory = [
     {
@@ -115,7 +125,7 @@ const AdminPatientView = () => {
           <div className="sider-content">
             <div className="patient-context">
               <Text type="secondary">Viewing Records For</Text>
-              <Title level={5} className="patient-name">{patientData.name}</Title>
+              <Title level={5} className="patient-name">{patientData?.name || 'Patient'}</Title>
             </div>
             
             <div className="sider-menu">
@@ -194,19 +204,19 @@ const AdminPatientView = () => {
               <Row gutter={[24, 24]}>
                 <Col xs={24} lg={12}>
                   <div className="patient-info">
-                    <Title level={2} className="patient-name">{patientData.name}</Title>
+                    <Title level={2} className="patient-name">{patientData?.name || 'Patient'}</Title>
                     <div className="patient-details">
                       <div className="detail-item">
-                        <Text strong>Age:</Text> <Text>{patientData.age}</Text>
+                        <Text strong>Age:</Text> <Text>{patientData?.age ?? 'N/A'}</Text>
                       </div>
                       <div className="detail-item">
-                        <Text strong>Gender:</Text> <Text>{patientData.gender}</Text>
+                        <Text strong>Gender:</Text> <Text>{patientData?.gender ?? 'N/A'}</Text>
                       </div>
                       <div className="detail-item">
-                        <Text strong>Blood Type:</Text> <Tag color="red">{patientData.bloodType}</Tag>
+                        <Text strong>Blood Type:</Text> <Tag color="red">{patientData?.bloodType ?? 'N/A'}</Tag>
                       </div>
                       <div className="detail-item">
-                        <Text strong>ABHA ID:</Text> <Text code>{patientData.abhaId}</Text>
+                        <Text strong>ABHA ID:</Text> <Text code>{patientData?.abhaId ?? 'N/A'}</Text>
                       </div>
                     </div>
                   </div>
@@ -216,10 +226,10 @@ const AdminPatientView = () => {
                     <Title level={4}>Contact Information</Title>
                     <div className="contact-details">
                       <div className="contact-item">
-                        <Text strong>Phone:</Text> <Text>{patientData.phone}</Text>
+                        <Text strong>Phone:</Text> <Text>{patientData?.phone ?? 'N/A'}</Text>
                       </div>
                       <div className="contact-item">
-                        <Text strong>Emergency:</Text> <Text>{patientData.emergencyContact}</Text>
+                        <Text strong>Emergency:</Text> <Text>{patientData?.emergencyContact ?? 'N/A'}</Text>
                       </div>
                     </div>
                   </div>

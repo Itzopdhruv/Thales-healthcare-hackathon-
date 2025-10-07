@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Doctor UI Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+        .test-title {
+            text-align: center;
+            color: #52c41a;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e8f5e8;
+            border-radius: 12px;
+            background: #fafbfc;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(82, 196, 26, 0.3);
+        }
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #d9f7be;
+        }
+        .status.error {
+            background: #fff2f0;
+            color: #ff4d4f;
+            border: 1px solid #ffccc7;
+        }
+        .status.loading {
+            background: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🤖 AI Doctor Integration Test</h1>
+        
+        <div class="test-section">
+            <h3>Service Health Checks</h3>
+            <button class="test-button" onclick="testAIDoctorService()">Test AI Doctor Service</button>
+            <button class="test-button" onclick="testNodeBackend()">Test Node.js Backend</button>
+            <button class="test-button" onclick="testFrontend()">Test React Frontend</button>
+            <div id="health-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>AI Doctor Features</h3>
+            <button class="test-button" onclick="testTextAnalysis()">Test Text Analysis</button>
+            <button class="test-button" onclick="testImageAnalysis()">Test Image Analysis</button>
+            <button class="test-button" onclick="testAudioAnalysis()">Test Audio Analysis</button>
+            <div id="feature-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Quick Links</h3>
+            <button class="test-button" onclick="window.open('http://localhost:3002', '_blank')">Open Patient Dashboard</button>
+            <button class="test-button" onclick="window.open('http://localhost:8000/docs', '_blank')">AI Doctor API Docs</button>
+            <button class="test-button" onclick="window.open('http://localhost:5001/api/ai-doctor/health', '_blank')">Backend Health Check</button>
+        </div>
+    </div>
+
+    <script>
+        function addStatus(containerId, message, type = 'loading') {
+            const container = document.getElementById(containerId);
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            container.appendChild(statusDiv);
+        }
+
+        function clearStatus(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        async function testAIDoctorService() {
+            clearStatus('health-status');
+            addStatus('health-status', 'Testing AI Doctor Service...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                if (response.ok) {
+                    addStatus('health-status', '✅ AI Doctor Service is running!', 'success');
+                } else {
+                    addStatus('health-status', '❌ AI Doctor Service returned error', 'error');
+                }
+            } catch (error) {
+                addStatus('health-status', '❌ AI Doctor Service is not running', 'error');
+            }
+        }
+
+        async function testNodeBackend() {
+            clearStatus('health-status');
+            addStatus('health-status', 'Testing Node.js Backend...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/ai-doctor/health');
+                if (response.ok) {
+                    addStatus('health-status', '✅ Node.js Backend is running!', 'success');
+                } else {
+                    addStatus('health-status', '❌ Node.js Backend returned error', 'error');
+                }
+            } catch (error) {
+                addStatus('health-status', '❌ Node.js Backend is not running', 'error');
+            }
+        }
+
+        async function testFrontend() {
+            clearStatus('health-status');
+            addStatus('health-status', 'Testing React Frontend...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:3002');
+                if (response.ok) {
+                    addStatus('health-status', '✅ React Frontend is running!', 'success');
+                } else {
+                    addStatus('health-status', '❌ React Frontend returned error', 'error');
+                }
+            } catch (error) {
+                addStatus('health-status', '❌ React Frontend is not running', 'error');
+            }
+        }
+
+        async function testTextAnalysis() {
+            clearStatus('feature-status');
+            addStatus('feature-status', 'Testing text analysis...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/ai-doctor/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test-token'
+                    },
+                    body: JSON.stringify({
+                        textInput: 'I have a headache, what should I do?'
+                    })
+                });
+                
+                if (response.ok) {
+                    addStatus('feature-status', '✅ Text analysis working!', 'success');
+                } else {
+                    addStatus('feature-status', '❌ Text analysis failed', 'error');
+                }
+            } catch (error) {
+                addStatus('feature-status', '❌ Text analysis error: ' + error.message, 'error');
+            }
+        }
+
+        function testImageAnalysis() {
+            addStatus('feature-status', 'ℹ️ Image analysis requires authentication. Test via the UI.', 'loading');
+        }
+
+        function testAudioAnalysis() {
+            addStatus('feature-status', 'ℹ️ Audio analysis requires authentication. Test via the UI.', 'loading');
+        }
+
+        // Auto-run health checks on page load
+        window.onload = function() {
+            testAIDoctorService();
+            setTimeout(testNodeBackend, 1000);
+            setTimeout(testFrontend, 2000);
+        };
+    </script>
+</body>
+</html>
+
+

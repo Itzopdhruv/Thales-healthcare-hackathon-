@@ -34,12 +34,14 @@ import rateLimit from 'express-rate-limit';
 
 // Import routes
 import authRoutes from './routes/auth.js';
+import patientAuthRoutes from './routes/patientAuth.js';
 import patientRoutes from './routes/patient.js';
 import patientAccessRoutes from './routes/patientAccess.js';
 import medicalHistoryRoutes from './routes/medicalHistory.js';
 import prescriptionRoutes from './routes/prescription.js';
 import reportRoutes from './routes/reports.js';
 import aiAssistantRoutes from './routes/aiAssistant.js';
+import aiDoctorRoutes from './routes/aiDoctor.js';
 import { summarizeReportWithGemini, testGeminiPrompt } from './services/geminiService.js';
 
 // Load environment variables
@@ -99,12 +101,15 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/patient-auth', patientAuthRoutes);
+console.log('✅ Mounted routes: /api/auth, /api/patient-auth');
 app.use('/api/patient', patientRoutes);
 app.use('/api/patient-access', patientAccessRoutes);
 app.use('/api/medical-history', medicalHistoryRoutes);
 app.use('/api/prescription', prescriptionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/ai-assistant', aiAssistantRoutes);
+app.use('/api/ai-doctor', aiDoctorRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -115,6 +120,11 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Patient auth health check
+app.get('/api/health/patient-auth', (req, res) => {
+  res.json({ success: true, route: '/api/patient-auth', methods: ['POST /request-otp', 'POST /verify-otp'] });
 });
 
 // Gemini health check

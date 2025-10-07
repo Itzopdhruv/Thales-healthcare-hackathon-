@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { patientAPI } from '../services/api';
+import AIDoctorChatbot from '../components/AIDoctorChatbot';
 import { 
   Layout, 
   Card, 
@@ -29,7 +31,8 @@ import {
   DownloadOutlined,
   PlusOutlined,
   BellOutlined,
-  SettingOutlined
+  SettingOutlined,
+  RobotOutlined
 } from '@ant-design/icons';
 import './PatientDashboard.css';
 
@@ -39,6 +42,11 @@ const { TabPane } = Tabs;
 
 const PatientDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [stats, setStats] = useState({ records: 0, appts: 0, meds: 0, score: 0 });
+  const [demographics, setDemographics] = useState({ age: 'N/A', gender: 'N/A', bloodType: 'N/A' });
+  const [reloadTick, setReloadTick] = useState(0);
+  const [showAIDoctor, setShowAIDoctor] = useState(false);
+  const [aiDoctorReady, setAiDoctorReady] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -73,11 +81,12 @@ const PatientDashboard = () => {
     }
   ];
 
-  const medications = [
+  // Pull medications dynamically from latest prescriptions when available (fallback to sample)
+  const [medications, setMedications] = useState([
     { name: 'Metformin', dosage: '500mg', frequency: 'Twice daily', nextRefill: '2025-02-15' },
     { name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily', nextRefill: '2025-02-20' },
     { name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily', nextRefill: '2025-02-25' }
-  ];
+  ]);
 
   const upcomingAppointments = [
     { date: '2025-01-20', time: '10:00 AM', doctor: 'Dr. Rajesh Kumar', specialty: 'Cardiology' },
@@ -145,6 +154,121 @@ const PatientDashboard = () => {
     navigate('/login');
   };
 
+  // Animate stats counters on mount
+  useEffect(() => {
+    const target = { records: 12, appts: 2, meds: 3, score: 85 };
+    const duration = 800;
+    const startTime = performance.now();
+    let frame;
+    const tick = (now) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setStats({
+        records: Math.floor(ease * target.records),
+        appts: Math.floor(ease * target.appts),
+        meds: Math.floor(ease * target.meds),
+        score: Math.floor(ease * target.score)
+      });
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Fetch medications from patient.currentMedications and recent prescriptions
+  useEffect(() => {
+    const loadMeds = async () => {
+      try {
+        if (!user?.abhaId) return;
+        const combined = [];
+        const seen = new Set();
+
+        // Patient current medications
+        const pRes = await patientAPI.lookupPatient(user.abhaId);
+        const cm = pRes?.data?.patient?.currentMedications || [];
+        cm.forEach(m => {
+          const key = `${m.name}|${m.dosage}|${m.frequency}`;
+          if (m.name && !seen.has(key)) {
+            seen.add(key);
+            combined.push({ name: m.name, dosage: m.dosage, frequency: m.frequency, nextRefill: m.nextRefill || '—' });
+          }
+        });
+
+        // Recent prescriptions (last 5)
+        const res = await patientAPI.getPrescriptions(user.abhaId, { page: 1, limit: 5 });
+        const rx = res?.data?.prescriptions || [];
+        rx.forEach(pr => {
+          (pr.medications || []).forEach(m => {
+            const key = `${m.name}|${m.dosage}|${m.frequency}`;
+            if (m.name && !seen.has(key)) {
+              seen.add(key);
+              combined.push({ name: m.name, dosage: m.dosage, frequency: m.frequency, nextRefill: '—' });
+            }
+          });
+        });
+
+        if (combined.length) setMedications(combined);
+      } catch (e) {
+        // keep fallback meds on error
+      }
+    };
+    loadMeds();
+  }, [user?.abhaId, reloadTick]);
+
+  // Listen for cross-page updates (e.g., when a new prescription is created elsewhere)
+  useEffect(() => {
+    const onPrescriptionCreated = (e) => {
+      if (!e?.detail?.abhaId || e.detail.abhaId === user?.abhaId) {
+        setReloadTick((x) => x + 1);
+      }
+    };
+    const onReportUploaded = (e) => {
+      if (!e?.detail?.abhaId || e.detail.abhaId === user?.abhaId) {
+        setReloadTick((x) => x + 1);
+      }
+    };
+    window.addEventListener('prescriptionCreated', onPrescriptionCreated);
+    window.addEventListener('reportUploaded', onReportUploaded);
+    return () => {
+      window.removeEventListener('prescriptionCreated', onPrescriptionCreated);
+      window.removeEventListener('reportUploaded', onReportUploaded);
+    };
+  }, [user?.abhaId]);
+
+  // Fetch demographics for header cards
+  useEffect(() => {
+    const loadDemo = async () => {
+      try {
+        if (!user?.abhaId) return;
+        const res = await patientAPI.lookupPatient(user.abhaId);
+        const p = res?.data?.patient;
+        if (p) {
+          setDemographics({
+            age: p.age ?? 'N/A',
+            gender: p.gender ?? 'N/A',
+            bloodType: p.bloodType ?? 'N/A'
+          });
+        }
+      } catch {}
+    };
+    loadDemo();
+  }, [user?.abhaId]);
+
+  // Check AI Doctor service availability
+  useEffect(() => {
+    const checkAIDoctor = async () => {
+      try {
+        const response = await fetch('/api/ai-doctor/health');
+        if (response.ok) {
+          setAiDoctorReady(true);
+        }
+      } catch (error) {
+        console.log('AI Doctor service not available');
+      }
+    };
+    checkAIDoctor();
+  }, []);
+
   return (
     <Layout className="patient-dashboard">
       <Header className="dashboard-header">
@@ -155,7 +279,7 @@ const PatientDashboard = () => {
               <span className="logo-link">yulink</span>
             </div>
             <Title level={4} className="welcome-text">
-              Welcome back, John Doe
+              Welcome back, {user?.name || 'Patient'}
             </Title>
           </div>
           <div className="header-right">
@@ -180,8 +304,8 @@ const PatientDashboard = () => {
           <div className="sider-content">
             <div className="user-profile">
               <Avatar size={80} icon={<UserOutlined />} />
-              <Title level={5}>John Doe</Title>
-              <Text type="secondary">Patient ID: P123456</Text>
+              <Title level={5}>{user?.name || 'Patient'}</Title>
+              <Text type="secondary">ABHA ID: {user?.abhaId || 'N/A'}</Text>
             </div>
             
             <div className="sider-menu">
@@ -233,42 +357,89 @@ const PatientDashboard = () => {
           <div className="content-wrapper">
             {activeTab === 'overview' && (
               <>
-                <Row gutter={[24, 24]} className="stats-row">
+                {/* Demographics header cards - colorful */}
+                <Row gutter={[24, 24]} className="stats-row fade-in" style={{ marginBottom: 16 }}>
                   <Col xs={24} sm={12} lg={6}>
-                    <Card className="stat-card">
+                    <Card style={{
+                      borderRadius: 20,
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f6ffed 100%)',
+                      border: '1px solid #d9f7be',
+                      boxShadow: '0 10px 30px rgba(82,196,26,0.12)'
+                    }}>
+                      <Typography.Text style={{ color: '#389e0d' }}>AGE</Typography.Text>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{String(demographics.age || 'N/A')}</div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card style={{
+                      borderRadius: 20,
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f6ffed 100%)',
+                      border: '1px solid #d9f7be',
+                      boxShadow: '0 10px 30px rgba(82,196,26,0.12)'
+                    }}>
+                      <Typography.Text style={{ color: '#389e0d' }}>GENDER</Typography.Text>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{String(demographics.gender || 'N/A').toUpperCase()}</div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card style={{
+                      borderRadius: 20,
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f6ffed 100%)',
+                      border: '1px solid #d9f7be',
+                      boxShadow: '0 10px 30px rgba(82,196,26,0.12)'
+                    }}>
+                      <Typography.Text style={{ color: '#389e0d' }}>BLOOD TYPE</Typography.Text>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{String(demographics.bloodType || 'N/A').toUpperCase()}</div>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card style={{
+                      borderRadius: 20,
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f6ffed 100%)',
+                      border: '1px solid #d9f7be',
+                      boxShadow: '0 10px 30px rgba(82,196,26,0.12)'
+                    }}>
+                      <Typography.Text style={{ color: '#389e0d' }}>ABHA ID</Typography.Text>
+                      <div style={{ fontSize: 20, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{user?.abhaId || 'N/A'}</div>
+                    </Card>
+                  </Col>
+                </Row>
+                <Row gutter={[24, 24]} className="stats-row fade-in">
+                  <Col xs={24} sm={12} lg={6}>
+                    <Card className="stat-card glow">
                       <Statistic
                         title="Total Records"
-                        value={12}
+                        value={stats.records}
                         prefix={<FileTextOutlined />}
                         valueStyle={{ color: '#1890ff' }}
                       />
                     </Card>
                   </Col>
                   <Col xs={24} sm={12} lg={6}>
-                    <Card className="stat-card">
+                    <Card className="stat-card glow delay-1">
                       <Statistic
                         title="Upcoming Appointments"
-                        value={2}
+                        value={stats.appts}
                         prefix={<CalendarOutlined />}
                         valueStyle={{ color: '#fa8c16' }}
                       />
                     </Card>
                   </Col>
                   <Col xs={24} sm={12} lg={6}>
-                    <Card className="stat-card">
+                    <Card className="stat-card glow delay-2">
                       <Statistic
                         title="Active Medications"
-                        value={3}
+                        value={stats.meds}
                         prefix={<MedicineBoxOutlined />}
                         valueStyle={{ color: '#52c41a' }}
                       />
                     </Card>
                   </Col>
                   <Col xs={24} sm={12} lg={6}>
-                    <Card className="stat-card">
+                    <Card className="stat-card glow delay-3">
                       <Statistic
                         title="Health Score"
-                        value={85}
+                        value={stats.score}
                         suffix="%"
                         prefix={<HeartOutlined />}
                         valueStyle={{ color: '#52c41a' }}
@@ -277,7 +448,7 @@ const PatientDashboard = () => {
                   </Col>
                 </Row>
 
-                <Row gutter={[24, 24]}>
+                <Row gutter={[24, 24]} className="slide-up">
                   <Col xs={24} lg={12}>
                     <Card title="Health Metrics" className="metrics-card">
                       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -456,6 +627,30 @@ const PatientDashboard = () => {
           </div>
         </Content>
       </Layout>
+      
+      {/* Floating AI Doctor Button */}
+      <div className="floating-ai-button">
+        <Button
+          type="primary"
+          shape="circle"
+          size="large"
+          icon={<RobotOutlined />}
+          onClick={() => setShowAIDoctor(!showAIDoctor)}
+          className={`ai-float-btn ${showAIDoctor ? 'active' : ''} ${aiDoctorReady ? 'ready' : 'loading'}`}
+          title={aiDoctorReady ? "AI Doctor Assistant - Ready" : "AI Doctor Assistant - Loading..."}
+        />
+        {aiDoctorReady && !showAIDoctor && (
+          <div className="ai-status-indicator">
+            <div className="status-dot"></div>
+          </div>
+        )}
+      </div>
+
+      {/* AI Doctor Chatbot */}
+      <AIDoctorChatbot 
+        isVisible={showAIDoctor} 
+        onClose={() => setShowAIDoctor(false)} 
+      />
     </Layout>
   );
 };

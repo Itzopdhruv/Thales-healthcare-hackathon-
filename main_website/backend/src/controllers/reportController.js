@@ -1,5 +1,6 @@
 import Report from '../models/Report.js';
 import User from '../models/User.js';
+import Patient from '../models/Patient.js';
 import { extractMedicalData, validateMedicalData, generateAIAnalysis } from '../services/ocrService.js';
 import { summarizeReportWithGemini, summarizeReportFromFile } from '../services/geminiService.js';
 import path from 'path';
@@ -19,31 +20,67 @@ export const uploadReport = async (req, res) => {
       });
     }
 
-    const { abhaId, documentType, title, description } = req.body;
-    const userId = req.userId;
+    const { abhaId, documentType, title, description, patientName, patientPhone, patientAge, patientGender, patientBloodType } = req.body;
+    const uploaderId = req.userId || req.patientId; // allow admin/doctor or patient upload
 
-    // Validate required fields
-    if (!abhaId || !documentType || !title) {
+    // Validate required fields (allow ABHA-only uploads; patientName/phone are optional)
+    if (!documentType || !title) {
       return res.status(400).json({
         success: false,
-        message: 'ABHA ID, document type, and title are required'
+        message: 'Document type and title are required'
       });
     }
 
-    // Verify patient exists
-    const patient = await User.findOne({ abhaId, role: 'patient' });
+    // Find or create Patient preferring ABHA; fallback to name+phone if provided
+    const normalizePhone = (phone) => (phone || '').toString().replace(/\D/g, '');
+    let patient = null;
+    if (abhaId) {
+      patient = await Patient.findOne({ abhaId });
+      if (!patient) {
+        // try legacy User
+        const legacyUser = await User.findOne({ abhaId, role: 'patient' });
+        if (legacyUser) {
+          patient = await Patient.findOneAndUpdate(
+            { abhaId: legacyUser.abhaId },
+            { name: legacyUser.name, phone: legacyUser.phone || '', abhaId: legacyUser.abhaId },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
+          );
+        }
+      }
+    }
+
+    if (!patient && (patientName || patientPhone)) {
+      const phoneNorm = normalizePhone(patientPhone);
+      const nameRegex = patientName ? new RegExp(`^${patientName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') : undefined;
+      if (nameRegex) {
+        patient = await Patient.findOne({ name: nameRegex, ...(patientPhone ? { phone: { $in: [patientPhone, phoneNorm] } } : {}) });
+      }
+    }
+
     if (!patient) {
-      return res.status(404).json({
-        success: false,
-        message: 'Patient not found with this ABHA ID'
+      patient = await Patient.create({
+        name: (patientName && patientName.trim()) || 'Unknown Patient',
+        phone: normalizePhone(patientPhone) || patientPhone || '',
+        abhaId: abhaId || null,
+        age: patientAge || null,
+        gender: patientGender || undefined,
+        bloodType: patientBloodType || undefined
       });
+    }
+    else {
+      let changed = false;
+      if (abhaId && !patient.abhaId) { patient.abhaId = abhaId; changed = true; }
+      if (patientAge && !patient.age) { patient.age = patientAge; changed = true; }
+      if (patientGender && !patient.gender) { patient.gender = patientGender; changed = true; }
+      if (patientBloodType && !patient.bloodType) { patient.bloodType = patientBloodType; changed = true; }
+      if (changed) await patient.save();
     }
 
     // Create report record
     const reportData = {
       abhaId,
       patientId: patient._id,
-      uploadedBy: userId,
+      uploadedBy: uploaderId,
       documentType,
       title,
       description: description || '',
@@ -256,7 +293,7 @@ export const getReportById = async (req, res) => {
 
     const report = await Report.findById(reportId)
       .populate('uploadedBy', 'name email')
-      .populate('patientId', 'name email abhaId');
+      .populate('patientId', 'name phone abhaId');
 
     if (!report) {
       return res.status(404).json({
@@ -643,3 +680,4 @@ User Question: ${message}`;
     });
   }
 };
+

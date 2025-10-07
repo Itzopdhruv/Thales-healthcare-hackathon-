@@ -135,22 +135,12 @@ export const validateCreatePrescription = [
     .isLength({ min: 2, max: 200 })
     .withMessage('Primary diagnosis must be between 2 and 200 characters'),
   
+  // Accept either an array of medications or a non-empty string (textarea) to be parsed server-side
   body('medications')
-    .isArray({ min: 1 })
-    .withMessage('At least one medication is required'),
-  
-  body('medications.*.name')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Medication name must be between 2 and 100 characters'),
-  
-  body('medications.*.dosage')
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Medication dosage must be between 1 and 50 characters'),
-  
-  body('medications.*.frequency')
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('Medication frequency must be between 1 and 50 characters')
+    .custom((value) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === 'string') return value.trim().length > 0;
+      return false;
+    })
+    .withMessage('Please provide medications as a list or textarea')
 ];

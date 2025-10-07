@@ -368,6 +368,8 @@ const SimplePatientViewer = () => {
         setAddPrescriptionModalVisible(false);
         addPrescriptionForm.resetFields();
         fetchPatientData(); // Refresh data
+        // Broadcast event so patient dashboard can reload meds without full refresh
+        window.dispatchEvent(new CustomEvent('prescriptionCreated', { detail: { abhaId: patientId } }));
       } else {
         message.error(response.data.message || 'Failed to create prescription');
       }
@@ -416,6 +418,12 @@ const SimplePatientViewer = () => {
       formData.append('documentType', values.documentType);
       formData.append('title', values.title);
       formData.append('description', values.description || '');
+      // Pass demographics to be stored with Patient (upsert)
+      if (values.patientName) formData.append('patientName', values.patientName);
+      if (values.patientPhone) formData.append('patientPhone', values.patientPhone);
+      if (values.patientAge) formData.append('patientAge', values.patientAge);
+      if (values.patientGender) formData.append('patientGender', values.patientGender);
+      if (values.patientBloodType) formData.append('patientBloodType', values.patientBloodType);
 
       const response = await api.post('/reports/upload', formData, {
         headers: {
@@ -935,11 +943,11 @@ const SimplePatientViewer = () => {
           <Layout.Content style={{ padding: '24px', background: '#f0f2f5' }}>
             {/* Patient Details - Hidden for National Health Pulse and AI Assistant tabs */}
             {activeTab !== 'nhp' && activeTab !== 'ai-assistant' && (<Card style={{ 
-              marginBottom: '24px',
-              borderRadius: '16px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e8f4fd',
-              background: 'linear-gradient(135deg, #fff 0%, #f8fbff 100%)'
+              marginBottom: 24,
+              borderRadius: 20,
+              boxShadow: '0 10px 30px rgba(82,196,26,0.15)',
+              border: '1px solid #d9f7be',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f6ffed 100%)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{
@@ -958,7 +966,7 @@ const SimplePatientViewer = () => {
                   </Text>
                 </div>
                 <div>
-                  <Title level={2} style={{ color: '#1890ff', margin: 0, fontSize: '28px' }}>
+                  <Title level={2} style={{ color: '#52c41a', margin: 0, fontSize: '28px' }}>
                     {patient?.name || 'Loading...'}
                   </Title>
                   <Text style={{ color: '#666', fontSize: '16px' }}>
@@ -970,50 +978,50 @@ const SimplePatientViewer = () => {
               <Row gutter={[24, 16]}>
                 <Col span={6}>
                   <div style={{ 
-                    background: '#f0f9ff', 
+                    background: 'linear-gradient(180deg, #ffffff 0%, #f6ffed 100%)', 
                     padding: '16px', 
-                    borderRadius: '12px',
-                    border: '1px solid #e6f7ff',
-                    textAlign: 'center'
-                  }}>
-                    <Text style={{ color: '#666', fontSize: '12px', display: 'block', marginBottom: '4px' }}>AGE</Text>
-                    <Text strong style={{ color: '#1890ff', fontSize: '18px' }}>{patient?.profile?.age || 'N/A'}</Text>
-                  </div>
-                </Col>
-                <Col span={6}>
-                  <div style={{ 
-                    background: '#f6ffed', 
-                    padding: '16px', 
-                    borderRadius: '12px',
+                    borderRadius: 16,
                     border: '1px solid #d9f7be',
                     textAlign: 'center'
                   }}>
-                    <Text style={{ color: '#666', fontSize: '12px', display: 'block', marginBottom: '4px' }}>GENDER</Text>
-                    <Text strong style={{ color: '#52c41a', fontSize: '18px' }}>{patient?.profile?.gender || 'N/A'}</Text>
+                    <Text style={{ color: '#389e0d', fontSize: 12, display: 'block', marginBottom: 4 }}>AGE</Text>
+                    <Text strong style={{ color: '#52c41a', fontSize: 20 }}>{patient?.age ?? 'N/A'}</Text>
                   </div>
                 </Col>
                 <Col span={6}>
                   <div style={{ 
-                    background: '#fff2e8', 
+                    background: 'linear-gradient(180deg, #ffffff 0%, #f6ffed 100%)', 
                     padding: '16px', 
-                    borderRadius: '12px',
-                    border: '1px solid #ffd591',
+                    borderRadius: 16,
+                    border: '1px solid #d9f7be',
                     textAlign: 'center'
                   }}>
-                    <Text style={{ color: '#666', fontSize: '12px', display: 'block', marginBottom: '4px' }}>BLOOD TYPE</Text>
-                    <Text strong style={{ color: '#fa8c16', fontSize: '18px' }}>{patient?.profile?.bloodType || 'N/A'}</Text>
+                    <Text style={{ color: '#389e0d', fontSize: 12, display: 'block', marginBottom: 4 }}>GENDER</Text>
+                    <Text strong style={{ color: '#52c41a', fontSize: 20 }}>{patient?.gender ?? 'N/A'}</Text>
                   </div>
                 </Col>
                 <Col span={6}>
                   <div style={{ 
-                    background: '#f9f0ff', 
+                    background: 'linear-gradient(180deg, #ffffff 0%, #f6ffed 100%)', 
                     padding: '16px', 
-                    borderRadius: '12px',
-                    border: '1px solid #d3adf7',
+                    borderRadius: 16,
+                    border: '1px solid #d9f7be',
                     textAlign: 'center'
                   }}>
-                    <Text style={{ color: '#666', fontSize: '12px', display: 'block', marginBottom: '4px' }}>ABHA ID</Text>
-                    <Text strong style={{ color: '#722ed1', fontSize: '14px' }}>{patient?.abhaId || patientId}</Text>
+                    <Text style={{ color: '#389e0d', fontSize: 12, display: 'block', marginBottom: 4 }}>BLOOD TYPE</Text>
+                    <Text strong style={{ color: '#52c41a', fontSize: 20 }}>{patient?.bloodType ?? 'N/A'}</Text>
+                  </div>
+                </Col>
+                <Col span={6}>
+                  <div style={{ 
+                    background: 'linear-gradient(180deg, #ffffff 0%, #f6ffed 100%)', 
+                    padding: '16px', 
+                    borderRadius: 16,
+                    border: '1px solid #d9f7be',
+                    textAlign: 'center'
+                  }}>
+                    <Text style={{ color: '#389e0d', fontSize: 12, display: 'block', marginBottom: 4 }}>ABHA ID</Text>
+                    <Text strong style={{ color: '#52c41a', fontSize: 16 }}>{patient?.abhaId || patientId}</Text>
                   </div>
                 </Col>
               </Row>
@@ -1780,6 +1788,42 @@ const SimplePatientViewer = () => {
                                 placeholder="Brief description of the report or any additional notes..."
                               />
                             </Form.Item>
+
+                            {/* Patient demographics to store with the report */}
+                            <Row gutter={16}>
+                              <Col span={8}>
+                                <Form.Item name="patientName" label="Patient Name">
+                                  <Input placeholder="Full name" />
+                                </Form.Item>
+                              </Col>
+                              <Col span={8}>
+                                <Form.Item name="patientPhone" label="Phone">
+                                  <Input placeholder="10-digit phone" />
+                                </Form.Item>
+                              </Col>
+                              <Col span={8}>
+                                <Form.Item name="patientAge" label="Age">
+                                  <Input placeholder="e.g., 28" />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                            <Row gutter={16}>
+                              <Col span={12}>
+                                <Form.Item name="patientGender" label="Gender">
+                                  <select style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                  </select>
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item name="patientBloodType" label="Blood Type">
+                                  <Input placeholder="e.g., AB+" />
+                                </Form.Item>
+                              </Col>
+                            </Row>
 
                             <div style={{
                               padding: '16px',

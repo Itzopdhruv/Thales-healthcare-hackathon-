@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { patientAuthAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -23,11 +23,22 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await api.get('/auth/me');
-          setUser(response.data.user);
+          const authType = localStorage.getItem('authType');
+          if (authType === 'patient') {
+            // For patient tokens, we don't call /auth/me (user-only). Restore cached user.
+            const cachedUser = localStorage.getItem('user');
+            if (cachedUser) {
+              setUser(JSON.parse(cachedUser));
+            }
+          } else {
+            const response = await api.get('/auth/me');
+            setUser(response.data.user);
+          }
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
+          localStorage.removeItem('authType');
+          localStorage.removeItem('user');
           setToken(null);
         }
       }
@@ -43,6 +54,8 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('token', newToken);
+      localStorage.setItem('authType', 'user');
+      localStorage.setItem('user', JSON.stringify(userData));
       setToken(newToken);
       setUser(userData);
       
@@ -53,6 +66,38 @@ export const AuthProvider = ({ children }) => {
         success: false, 
         error: error.response?.data?.message || 'Login failed' 
       };
+    }
+  };
+
+  const patientLoginRequestOtp = async ({ name, phone, abhaId }) => {
+    try {
+      const data = await patientAuthAPI.requestOtp({ name, phone, abhaId });
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to request OTP' };
+    }
+  };
+
+  const patientLoginVerifyOtp = async ({ name, phone, abhaId, otp }) => {
+    try {
+      const data = await patientAuthAPI.verifyOtp({ name, phone, abhaId, otp });
+      const { token: newToken, patient } = data;
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('authType', 'patient');
+      const patientUser = {
+        id: patient.id,
+        name: patient.name,
+        phone: patient.phone,
+        abhaId: patient.abhaId,
+        role: 'patient'
+      };
+      localStorage.setItem('user', JSON.stringify(patientUser));
+      setToken(newToken);
+      // Normalize to user-like object for dashboards
+      setUser(patientUser);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'OTP verification failed' };
     }
   };
 
@@ -99,6 +144,8 @@ export const AuthProvider = ({ children }) => {
     } finally {
       // Always clear local storage and state
       localStorage.removeItem('token');
+      localStorage.removeItem('authType');
+      localStorage.removeItem('user');
       setToken(null);
       setUser(null);
     }
@@ -109,6 +156,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
+    patientLoginRequestOtp,
+    patientLoginVerifyOtp,
     register,
     logout,
     isAuthenticated: !!token

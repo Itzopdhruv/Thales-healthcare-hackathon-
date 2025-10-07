@@ -1,4 +1,5 @@
 import Prescription from '../models/Prescription.js';
+import Patient from '../models/Patient.js';
 import User from '../models/User.js';
 import { validationResult } from 'express-validator';
 
@@ -26,15 +27,44 @@ export const createPrescription = async (req, res) => {
       insuranceAmount
     } = req.body;
 
-    const adminId = req.userId;
+    const creatorId = req.userId || req.patientId; // support admin/doctor or patient tokens
 
-    // Find patient by ABHA ID
-    const patient = await User.findOne({ abhaId, role: 'patient' });
+    // Find patient by ABHA ID in Patient collection (fallback to legacy User model)
+    let patient = await Patient.findOne({ abhaId });
     if (!patient) {
-      return res.status(404).json({
-        success: false,
-        message: 'Patient not found with this ABHA ID'
-      });
+      const legacyUser = await User.findOne({ abhaId, role: 'patient' });
+      if (!legacyUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Patient not found with this ABHA ID'
+        });
+      }
+      // Upsert Patient from legacy user to keep new flow working
+      patient = await Patient.findOneAndUpdate(
+        { abhaId: legacyUser.abhaId },
+        { name: legacyUser.name, phone: legacyUser.phone || '', abhaId: legacyUser.abhaId, isActive: true },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    // Parse medications if provided as textarea string: one per line "Name - Dosage - Frequency"
+    let parsedMeds = [];
+    if (Array.isArray(medications)) {
+      parsedMeds = medications;
+    } else if (typeof medications === 'string') {
+      parsedMeds = medications
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => {
+          const parts = line.split(' - ').map(s => s.trim());
+          return {
+            name: parts[0] || '',
+            dosage: parts[1] || '',
+            frequency: parts[2] || ''
+          };
+        })
+        .filter(m => m.name);
     }
 
     const prescriptionData = {
@@ -44,17 +74,33 @@ export const createPrescription = async (req, res) => {
       doctor,
       hospitalClinic,
       diagnosis,
-      medications,
+      medications: parsedMeds,
       instructions: instructions || {},
       totalAmount: totalAmount || 0,
       insuranceCovered: insuranceCovered || false,
       insuranceAmount: insuranceAmount || 0,
       patientAmount: (totalAmount || 0) - (insuranceAmount || 0),
-      createdBy: adminId
+      createdBy: creatorId
     };
 
     const newPrescription = new Prescription(prescriptionData);
     await newPrescription.save();
+
+    // Update patient's current medications from this prescription
+    try {
+      if (Array.isArray(prescriptionData.medications) && prescriptionData.medications.length) {
+        const mapped = prescriptionData.medications.map(m => ({
+          name: m.name,
+          dosage: m.dosage,
+          frequency: m.frequency,
+          instructions: m.instructions || '',
+          nextRefill: null
+        }));
+        await Patient.findByIdAndUpdate(patient._id, { currentMedications: mapped });
+      }
+    } catch (e) {
+      console.warn('Failed to sync currentMedications to Patient:', e?.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -84,8 +130,8 @@ export const getPrescriptions = async (req, res) => {
     const { abhaId } = req.params;
     const { page = 1, limit = 10, status } = req.query;
 
-    // Find patient by ABHA ID
-    const patient = await User.findOne({ abhaId, role: 'patient' });
+    // Find patient by ABHA ID in Patient collection
+    const patient = await Patient.findOne({ abhaId });
     if (!patient) {
       return res.status(404).json({
         success: false,

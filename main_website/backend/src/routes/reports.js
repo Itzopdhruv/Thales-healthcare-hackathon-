@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Patient from '../models/Patient.js';
 import {
   uploadReport,
   getPatientReports,
@@ -37,24 +38,27 @@ const authenticateTokenOrQuery = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token - user not found'
-      });
+    if (decoded?.type === 'patient' || decoded?.patientId) {
+      const patient = await Patient.findById(decoded.patientId);
+      if (!patient) {
+        return res.status(401).json({ success: false, message: 'Invalid token - patient not found' });
+      }
+      if (patient.isActive === false) {
+        return res.status(401).json({ success: false, message: 'Account is deactivated' });
+      }
+      req.patientId = patient._id;
+      req.patient = patient;
+    } else {
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Invalid token - user not found' });
+      }
+      if (!user.isActive) {
+        return res.status(401).json({ success: false, message: 'Account is deactivated' });
+      }
+      req.userId = user._id;
+      req.user = user;
     }
-
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated'
-      });
-    }
-
-    req.userId = user._id;
-    req.user = user;
     next();
 
   } catch (error) {

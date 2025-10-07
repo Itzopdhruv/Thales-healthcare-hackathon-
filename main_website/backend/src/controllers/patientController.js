@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Patient from '../models/Patient.js';
 import bcrypt from 'bcryptjs';
 
 /**
@@ -26,8 +27,8 @@ const generateABHAId = () => {
  * @returns {boolean} True if exists, false otherwise
  */
 const checkABHAIdExists = async (abhaId) => {
-  const existingUser = await User.findOne({ abhaId });
-  return !!existingUser;
+  const existingPatient = await Patient.findOne({ abhaId });
+  return !!existingPatient;
 };
 
 /**
@@ -100,73 +101,19 @@ export const createPatientWithABHA = async (req, res) => {
       abhaId = await generateUniqueABHAId();
     }
 
-    // Create username from name (replace spaces with underscores and make lowercase)
-    const username = fullName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4);
-
-    // Generate email if not provided
-    const userEmail = email || `${username}@aayulink.com`;
-
-    // Create user record
-    const userData = {
-      username,
-      name: fullName,
-      email: userEmail,
-      phone: phoneNumber,
+    // Create Patient record in Patient collection (used for OTP login)
+    const normalizePhone = (p) => (p || '').toString().replace(/\D/g, '');
+    const patientData = {
+      name: fullName.trim(),
+      phone: normalizePhone(phoneNumber) || phoneNumber,
       abhaId,
-      password: await bcrypt.hash('temp_password_123', 10), // Temporary password
-      role: 'patient',
-      isActive: true,
-      profile: {
-        dateOfBirth: new Date(dateOfBirth),
-        age: parseInt(age),
-        gender: gender.toLowerCase(),
-        bloodType: bloodType || 'Not specified',
-        address: {
-          street: address.street || '',
-          city: address.city || '',
-          state: address.state || '',
-          pincode: address.pincode || '',
-          country: address.country || 'India'
-        },
-        emergencyContact: {
-          name: emergencyContact ? emergencyContact.split(' ')[0] : 'Not provided',
-          phone: emergencyContact ? emergencyContact.split(' ').slice(1).join(' ') : '',
-          relationship: 'Emergency Contact'
-        },
-        // Critical health information
-        allergies: allergies ? [allergies] : [],
-        medicalConditions: medicalConditions ? [medicalConditions] : [],
-        currentMedications: medications ? [{
-          name: medications,
-          dosage: '',
-          frequency: '',
-          prescribedBy: 'System',
-          startDate: new Date()
-        }] : [],
-        // Medical history
-        medicalHistory: {
-          surgeries: [],
-          hospitalizations: [],
-          vaccinations: []
-        },
-        preferredLanguage: 'en'
-      },
-      preferences: {
-        language: 'en',
-        notifications: {
-          email: true,
-          sms: true,
-          push: true
-        }
-      }
+      age: parseInt(age),
+      gender: (gender || '').toLowerCase(),
+      bloodType: bloodType || undefined
     };
-
-    // Save user to database
-    console.log('Creating user with data:', JSON.stringify(userData, null, 2));
-    const newUser = new User(userData);
-    console.log('User object created, saving to database...');
-    await newUser.save();
-    console.log('User saved successfully with ID:', newUser._id);
+    console.log('Creating Patient with data:', JSON.stringify(patientData, null, 2));
+    const newPatient = await Patient.create(patientData);
+    console.log('Patient saved successfully with ID:', newPatient._id);
 
     // Health record functionality removed - using MedicalHistory and Prescription models instead
 
@@ -175,11 +122,10 @@ export const createPatientWithABHA = async (req, res) => {
       success: true,
       message: 'Patient record created successfully with ABHA ID',
       data: {
-        patientId: newUser._id,
+        patientId: newPatient._id,
         abhaId,
         name: fullName,
-        email: userEmail,
-        phone: phoneNumber,
+        phone: patientData.phone,
         age,
         gender,
         bloodType: bloodType || 'Not specified',
@@ -192,7 +138,7 @@ export const createPatientWithABHA = async (req, res) => {
         allergies: allergies || 'None reported',
         medicalConditions: medicalConditions || 'None reported',
         medications: medications || 'None reported',
-        createdAt: newUser.createdAt
+        createdAt: newPatient.createdAt
       }
     });
 
@@ -249,9 +195,8 @@ export const getPatientByABHAId = async (req, res) => {
       });
     }
 
-    const patient = await User.findOne({ abhaId, role: 'patient' })
-      .select('-password -__v')
-      .populate('profile');
+    const patient = await Patient.findOne({ abhaId })
+      .select('-__v');
 
     if (!patient) {
       return res.status(404).json({
@@ -268,11 +213,11 @@ export const getPatientByABHAId = async (req, res) => {
           id: patient._id,
           abhaId: patient.abhaId,
           name: patient.name,
-          email: patient.email,
           phone: patient.phone,
-          role: patient.role,
-          isActive: patient.isActive,
-          profile: patient.profile,
+          age: patient.age ?? null,
+          gender: patient.gender ?? null,
+          bloodType: patient.bloodType ?? null,
+          currentMedications: patient.currentMedications || [],
           createdAt: patient.createdAt,
           lastLogin: patient.lastLogin
         }
@@ -347,5 +292,37 @@ export const updatePatientRecord = async (req, res) => {
       error: 'Internal server error while updating patient record',
       details: error.message
     });
+  }
+};
+
+// Patch-only demographics update for Patient collection
+export const updatePatientDemographics = async (req, res) => {
+  try {
+    const { abhaId } = req.params;
+    const { age, gender, bloodType } = req.body;
+
+    if (!abhaId) {
+      return res.status(400).json({ success: false, error: 'ABHA ID is required' });
+    }
+
+    const patch = {};
+    if (typeof age !== 'undefined') patch.age = parseInt(age);
+    if (typeof gender !== 'undefined') patch.gender = (gender || '').toLowerCase();
+    if (typeof bloodType !== 'undefined') patch.bloodType = bloodType;
+
+    const updated = await Patient.findOneAndUpdate(
+      { abhaId },
+      { $set: patch },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Patient not found' });
+    }
+
+    res.json({ success: true, message: 'Demographics updated', data: { patient: updated } });
+  } catch (error) {
+    console.error('Error updating demographics:', error);
+    res.status(500).json({ success: false, error: 'Failed to update demographics', details: error.message });
   }
 };

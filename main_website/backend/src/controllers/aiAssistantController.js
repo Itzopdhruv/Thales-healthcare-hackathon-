@@ -4,6 +4,7 @@ import HealthRecord from '../models/HealthRecord.js';
 import MedicalHistory from '../models/MedicalHistory.js';
 import Prescription from '../models/Prescription.js';
 import User from '../models/User.js';
+import Patient from '../models/Patient.js';
 
 // AI Assistant Chat Controller
 export const chatWithAIAssistant = async (req, res) => {
@@ -264,8 +265,11 @@ export const getPatientContext = async (req, res) => {
     const { patientId } = req.params; // This is actually abhaId
     console.log('AI Assistant: Getting patient context for abhaId:', patientId);
 
-    // Get patient data by abhaId
-    const patient = await User.findOne({ abhaId: patientId });
+    // Get patient data by abhaId (prefer new Patient model, fallback to User)
+    let patient = await Patient.findOne({ abhaId: patientId });
+    if (!patient) {
+      patient = await User.findOne({ abhaId: patientId });
+    }
     if (!patient) {
       console.log('AI Assistant: Patient not found with abhaId:', patientId);
       return res.status(404).json({
