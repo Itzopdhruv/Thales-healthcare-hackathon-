@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { patientAPI } from '../services/api';
 import AIDoctorChatbot from '../components/AIDoctorChatbot';
+import PatientAppointmentBooking from '../components/PatientAppointmentBooking';
 import { 
   Layout, 
   Card, 
@@ -528,48 +529,7 @@ const PatientDashboard = () => {
             )}
 
             {activeTab === 'appointments' && (
-              <Row gutter={[24, 24]}>
-                <Col xs={24} lg={12}>
-                  <Card title="Upcoming Appointments" className="appointments-card">
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                      {upcomingAppointments.map((appointment, index) => (
-                        <div key={index} className="appointment-item">
-                          <div className="appointment-date">
-                            <Text strong>{appointment.date}</Text>
-                            <Text type="secondary"> at {appointment.time}</Text>
-                          </div>
-                          <div className="appointment-details">
-                            <Text strong>{appointment.doctor}</Text>
-                            <br />
-                            <Text type="secondary">{appointment.specialty}</Text>
-                          </div>
-                          <Button type="primary" size="small">
-                            View Details
-                          </Button>
-                        </div>
-                      ))}
-                    </Space>
-                  </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Card title="Book New Appointment" className="book-appointment-card">
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                      <Button type="primary" size="large" block>
-                        Book with Cardiologist
-                      </Button>
-                      <Button type="default" size="large" block>
-                        Book with Dermatologist
-                      </Button>
-                      <Button type="default" size="large" block>
-                        Book with General Physician
-                      </Button>
-                      <Button type="default" size="large" block>
-                        Emergency Consultation
-                      </Button>
-                    </Space>
-                  </Card>
-                </Col>
-              </Row>
+              <PatientAppointmentBooking />
             )}
 
             {activeTab === 'medications' && (

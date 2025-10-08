@@ -1,0 +1,317 @@
+.admin-appointment-management {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-appointment-management h2 {
+  color: #2c3e50;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.management-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.management-section h3 {
+  color: #34495e;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+}
+
+.specialties-list, .doctors-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.specialty-item, .doctor-item {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.specialty-item span:first-child {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.specialty-item .description {
+  color: #7f8c8d;
+  font-size: 0.9em;
+}
+
+.doctor-item span {
+  color: #2c3e50;
+}
+
+.doctor-item span:first-child {
+  font-weight: bold;
+}
+
+.add-form {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  align-items: end;
+}
+
+.add-form input, .add-form select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.add-form button {
+  padding: 10px 20px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.add-form button:hover {
+  background: #2980b9;
+}
+
+.slot-controls {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.slot-controls select, .slot-controls input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.slot-controls button {
+  padding: 10px 15px;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.slot-controls button:hover {
+  background: #229954;
+}
+
+.bulk-slot-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 100px auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bulk-slot-row input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.bulk-slot-row button {
+  padding: 8px 12px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.slots-list {
+  margin-top: 20px;
+}
+
+.slots-list h4 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.slot-item {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.slot-item.booked {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+}
+
+.slot-item span {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.slot-item .status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.slot-item .status.available {
+  background: #d4edda;
+  color: #155724;
+}
+
+.slot-item .status.booked {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.slot-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.3s;
+}
+
+.slot-actions button:not(.delete-btn) {
+  background: #ffc107;
+  color: #212529;
+}
+
+.slot-actions button:not(.delete-btn):hover {
+  background: #e0a800;
+}
+
+.slot-actions button.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.slot-actions button.delete-btn:hover {
+  background: #c82333;
+}
+
+.slot-actions button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.appointments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.appointment-item {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.appointment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.appointment-info span {
+  color: #2c3e50;
+}
+
+.appointment-info span:first-child {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.appointment-info .status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.appointment-info .status.scheduled {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.appointment-info .status.confirmed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.appointment-info .status.completed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.appointment-info .status.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+@media (max-width: 768px) {
+  .add-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .slot-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .bulk-slot-row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  
+  .slot-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .slot-actions {
+    justify-content: center;
+  }
+}

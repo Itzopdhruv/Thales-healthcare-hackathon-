@@ -12,7 +12,7 @@ console.log('📁 Looking for .env file at:', envPath);
 console.log('📁 Current working directory:', process.cwd());
 const result = dotenv.config({ path: envPath });
 if (result.error) {
-  console.error('❌ Error loading .env file:', result.error);
+  console.warn('⚠️  .env file not found, using default values:', result.error.message);
 } else {
   console.log('✅ .env file loaded successfully');
   console.log('📦 Parsed values:', result.parsed);
@@ -31,6 +31,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import http from 'http';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -42,7 +43,10 @@ import prescriptionRoutes from './routes/prescription.js';
 import reportRoutes from './routes/reports.js';
 import aiAssistantRoutes from './routes/aiAssistant.js';
 import aiDoctorRoutes from './routes/aiDoctor.js';
+import appointmentRoutes from './routes/appointmentRoutes.js';
+import adminAppointmentRoutes from './routes/adminAppointmentRoutes.js';
 import { summarizeReportWithGemini, testGeminiPrompt } from './services/geminiService.js';
+import WebSocketService from './services/WebSocketService.js';
 
 // Load environment variables
 dotenv.config();
@@ -110,6 +114,8 @@ app.use('/api/prescription', prescriptionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/ai-assistant', aiAssistantRoutes);
 app.use('/api/ai-doctor', aiDoctorRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/admin/appointments', adminAppointmentRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -192,8 +198,18 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize WebSocket service
+const webSocketService = new WebSocketService(server);
+
+// Make WebSocket service available globally for use in controllers
+global.webSocketService = webSocketService;
+
+server.listen(PORT, () => {
   console.log(`🚀 AayuLink Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`🔌 WebSocket service initialized`);
 });

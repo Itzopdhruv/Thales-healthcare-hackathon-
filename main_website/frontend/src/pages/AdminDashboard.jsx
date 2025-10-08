@@ -27,6 +27,7 @@ import {
 } from 'antd';
 import { useAuth } from '../contexts/AuthContext';
 import { patientAPI } from '../services/api';
+import AdminAppointmentManagement from '../components/AdminAppointmentManagement';
 import {
   UserOutlined,
   FileTextOutlined,
@@ -46,7 +47,8 @@ import {
   UserAddOutlined,
   ExclamationCircleOutlined,
   MailOutlined,
-  CreditCardOutlined
+  CreditCardOutlined,
+  ScheduleOutlined
 } from '@ant-design/icons';
 import './AdminDashboard.css';
 
@@ -537,6 +539,14 @@ const AdminDashboard = () => {
               >
                 <SafetyOutlined /> Security
               </Button>
+              <Button 
+                type={activeTab === 'appointments' ? 'primary' : 'text'}
+                block
+                className="menu-item"
+                onClick={() => setActiveTab('appointments')}
+              >
+                <ScheduleOutlined /> Appointments
+              </Button>
             </div>
           </div>
         </Sider>
@@ -897,6 +907,10 @@ const AdminDashboard = () => {
                   </Col>
                 </Row>
               </Card>
+            )}
+
+            {activeTab === 'appointments' && (
+              <AdminAppointmentManagement />
             )}
           </div>
         </Content>
