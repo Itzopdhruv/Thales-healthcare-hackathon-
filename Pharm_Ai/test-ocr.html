@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR Test</title>
+</head>
+<body>
+    <h1>OCR Test Page</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="testOCR()">Test OCR</button>
+    <div id="result"></div>
+
+    <script>
+        async function testOCR() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/prescriptions/ocr', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
