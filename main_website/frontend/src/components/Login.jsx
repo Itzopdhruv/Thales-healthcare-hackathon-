@@ -70,18 +70,18 @@ const Login = () => {
       setParticleCount(100);
       
       setTimeout(() => {
-      message.success('Login successful!');
+        message.success('Login successful!');
         setShowSuccessAnimation(false);
         setIsTransitioning(false);
         
         // Navigate based on role
-      if (activeTab === 'admin') {
-        navigate('/admin-dashboard');
-      } else if (activeTab === 'doctor') {
-        navigate('/doctor-dashboard');
-      } else {
-        navigate('/patient-dashboard');
-      }
+        if (activeTab === 'admin') {
+          navigate('/admin-dashboard');
+        } else if (activeTab === 'doctor') {
+          navigate('/doctor-dashboard');
+        } else {
+          navigate('/patient-dashboard');
+        }
       }, 2000);
     } else {
       // Reset states on error

@@ -100,9 +100,8 @@ const doctorAvailabilitySlotSchema = new mongoose.Schema({
     default: false
   },
   bookingLock: {
-    patientId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Patient'
+    abhaId: {
+      type: String
     },
     lockedAt: {
       type: Date
@@ -114,6 +113,11 @@ const doctorAvailabilitySlotSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     }
+  },
+  jitsiMeetingId: {
+    type: String,
+    unique: true,
+    sparse: true
   }
 }, {
   timestamps: true
@@ -151,10 +155,14 @@ const appointmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'],
+    enum: ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'SERVICED', 'CANCELLED', 'NO_SHOW'],
     default: 'SCHEDULED'
   },
   reasonForVisit: {
+    type: String,
+    trim: true
+  },
+  abhaId: {
     type: String,
     trim: true
   },

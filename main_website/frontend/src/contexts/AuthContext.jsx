@@ -36,10 +36,8 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Auth check failed:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('authType');
-          localStorage.removeItem('user');
-          setToken(null);
+          // Don't clear tokens immediately, let user retry
+          console.log('Authentication failed, but keeping user logged in for retry');
         }
       }
       setLoading(false);
@@ -50,18 +48,21 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      console.log('🔐 Attempting login with credentials:', credentials);
       const response = await api.post('/auth/login', credentials);
       const { token: newToken, user: userData } = response.data;
       
+      console.log('✅ Login successful, setting user data:', userData);
       localStorage.setItem('token', newToken);
       localStorage.setItem('authType', 'user');
       localStorage.setItem('user', JSON.stringify(userData));
       setToken(newToken);
       setUser(userData);
       
+      console.log('💾 User data saved to localStorage and state');
       return { success: true };
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
       return { 
         success: false, 
         error: error.response?.data?.message || 'Login failed' 

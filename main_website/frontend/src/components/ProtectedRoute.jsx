@@ -4,9 +4,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { Spin } from 'antd';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, token } = useAuth();
+
+  console.log('🛡️ ProtectedRoute check:', { 
+    isAuthenticated, 
+    loading, 
+    hasUser: !!user, 
+    hasToken: !!token,
+    userRole: user?.role 
+  });
 
   if (loading) {
+    console.log('⏳ ProtectedRoute: Still loading...');
     return (
       <div style={{
         display: 'flex',
@@ -20,7 +29,13 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    console.log('🚫 ProtectedRoute: Not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+
+  console.log('✅ ProtectedRoute: Authenticated, rendering children');
+  return children;
 };
 
 export default ProtectedRoute;

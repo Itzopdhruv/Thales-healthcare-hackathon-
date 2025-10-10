@@ -76,7 +76,11 @@ const prescriptionSchema = new mongoose.Schema({
     quantity: Number,
     unit: String,
     genericName: String,
-    manufacturer: String
+    manufacturer: String,
+    nextRefill: {
+      type: Date,
+      default: null
+    }
   }],
   instructions: {
     general: String,

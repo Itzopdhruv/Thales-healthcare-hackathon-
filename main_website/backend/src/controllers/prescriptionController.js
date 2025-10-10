@@ -94,7 +94,7 @@ export const createPrescription = async (req, res) => {
           dosage: m.dosage,
           frequency: m.frequency,
           instructions: m.instructions || '',
-          nextRefill: null
+          nextRefill: m.nextRefill || null
         }));
         await Patient.findByIdAndUpdate(patient._id, { currentMedications: mapped });
       }

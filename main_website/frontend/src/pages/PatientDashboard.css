@@ -233,36 +233,307 @@
 }
 
 .dashboard-sider {
-  background: linear-gradient(180deg, #ffffff 0%, #f6ffed 100%);
-  box-shadow: 2px 0 14px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(248, 250, 252, 0.9) 50%,
+    rgba(240, 249, 255, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    2px 0 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
   position: fixed;
   left: 0;
   top: 70px;
   bottom: 0;
   z-index: 999;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .sider-content {
-  padding: 24px 16px;
+  padding: 32px 20px;
   height: 100%;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Enhanced User Profile Section */
 .user-profile {
   text-align: center;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 40px;
+  padding: 32px 20px;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.8) 0%, 
+    rgba(248, 250, 252, 0.6) 100%);
+  backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
 }
 
-.user-profile .ant-typography {
-  margin: 8px 0 !important;
+.user-profile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #1890ff 50%, 
+    #52c41a 75%, 
+    #fa8c16 100%);
+  background-size: 300% 100%;
+  animation: rainbow-flow 4s ease-in-out infinite;
 }
 
+.profile-image-container {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.profile-image-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-image-wrapper:hover {
+  transform: scale(1.05);
+}
+
+.profile-image-wrapper:hover .image-overlay {
+  opacity: 1;
+}
+
+.profile-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+  border: 3px solid rgba(255, 255, 255, 0.8) !important;
+}
+
+.profile-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.camera-icon {
+  color: white;
+  font-size: 24px;
+}
+
+.upload-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 8px;
+}
+
+.profile-info {
+  position: relative;
+}
+
+.profile-name {
+  margin: 0 0 12px 0 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+}
+
+.abha-badge {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border: 1px solid #90caf9;
+  border-radius: 16px;
+  padding: 8px 16px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(21, 101, 192, 0.2);
+}
+
+.abha-text {
+  color: #1565c0 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  margin: 0 !important;
+}
+
+/* Enhanced Navigation Menu */
 .sider-menu {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  flex: 1;
+}
+
+.menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(24, 144, 255, 0.3);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.2);
+  color: white;
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.menu-item:hover::before {
+  left: 100%;
+}
+
+.menu-item:hover {
+  transform: translateX(8px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(24, 144, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.menu-item.active {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  color: white;
+  box-shadow: 0 8px 25px rgba(82, 196, 26, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.menu-item.active .menu-icon {
+  color: white;
+}
+
+.menu-item.active .menu-text {
+  color: white;
+  font-weight: 700;
+}
+
+.menu-icon {
+  font-size: 18px;
+  margin-right: 16px;
+  color: white;
+  transition: all 0.3s ease;
+  min-width: 20px;
+}
+
+.menu-text {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.menu-indicator {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.menu-item.active .menu-indicator {
+  opacity: 1;
+  transform: scale(1.2);
+  background: white;
+}
+
+/* Emergency Section */
+.emergency-section {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.emergency-btn {
+  width: 100%;
+  height: 56px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  color: white !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.emergency-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.emergency-btn:hover::before {
+  left: 100%;
+}
+
+.emergency-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4) !important;
+}
+
+.emergency-btn:active {
+  transform: translateY(-1px) scale(1.02);
+}
+
+/* Animations */
+@keyframes rainbow-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .menu-item {
@@ -415,6 +686,658 @@
   margin: 0 16px;
 }
 
+/* Ultra-Elegant Medication Cards */
+.medications-header {
+  margin-bottom: 40px;
+  padding: 32px 0;
+  text-align: center;
+  position: relative;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.05) 0%, 
+    rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.medications-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #1890ff);
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.header-main-text {
+  margin-bottom: 24px;
+}
+
+.main-description {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  color: #4a5568 !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.6 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.description-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(20px) scale(0.8);
+  animation: wordReveal 0.8s ease-out forwards;
+  animation-fill-mode: both;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.description-word:hover {
+  transform: translateY(-2px) scale(1.05);
+  color: #667eea !important;
+  text-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+.description-word:nth-child(1) { animation-delay: 0.1s; }
+.description-word:nth-child(2) { animation-delay: 0.2s; }
+.description-word:nth-child(3) { animation-delay: 0.3s; }
+.description-word:nth-child(4) { animation-delay: 0.4s; }
+.description-word:nth-child(5) { animation-delay: 0.5s; }
+.description-word:nth-child(6) { animation-delay: 0.6s; }
+.description-word:nth-child(7) { animation-delay: 0.7s; }
+.description-word:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes wordReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+    filter: blur(5px);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-5px) scale(1.05);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Special styling for key words */
+.description-word:nth-child(3) { /* medications */
+  color: #1890ff !important;
+  font-weight: 600 !important;
+}
+
+.description-word:nth-child(6) { /* AI-powered */
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700 !important;
+}
+
+.description-word:nth-child(7) { /* pharmacy */
+  color: #52c41a !important;
+  font-weight: 600 !important;
+}
+
+.pharm-ai-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, 
+    rgba(82, 196, 26, 0.1) 0%, 
+    rgba(82, 196, 26, 0.05) 100%);
+  border: 1px solid rgba(82, 196, 26, 0.3);
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.2);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #52c41a, #73d13d);
+  border-radius: 50%;
+  animation: pulse-live 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(82, 196, 26, 0.6);
+}
+
+.live-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #389e0d;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+@keyframes pulse-live {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+.pharm-ai-tagline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pharm-ai-text {
+  font-size: 36px;
+  font-weight: 900;
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #1890ff 50%, 
+    #52c41a 75%, 
+    #fa8c16 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 4px;
+  text-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+  animation: 
+    rainbow-flow 4s ease-in-out infinite,
+    text-pulse 2s ease-in-out infinite,
+    text-float 6s ease-in-out infinite;
+  position: relative;
+  display: inline-block;
+}
+
+.pharm-ai-text::before {
+  content: 'PHARM AI';
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.3) 0%, 
+    rgba(118, 75, 162, 0.3) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: blur(2px);
+  z-index: -1;
+  animation: shadow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes rainbow-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes text-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.3);
+  }
+}
+
+@keyframes text-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(0.5deg);
+  }
+  50% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(3px) rotate(-0.5deg);
+  }
+}
+
+@keyframes shadow-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+.animated-tagline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.word-animation {
+  font-size: 14px;
+  font-weight: 600;
+  color: #667eea;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.1) 0%, 
+    rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 15px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  backdrop-filter: blur(5px);
+  animation: wordSlideIn 0.8s ease-out;
+  animation-fill-mode: both;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.word-animation:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.word-animation:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.word-animation:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+.word-animation:nth-child(4) {
+  animation-delay: 0.7s;
+}
+
+@keyframes wordSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Continuous word animation */
+.word-animation {
+  animation: wordSlideIn 0.8s ease-out, wordFloat 4s ease-in-out infinite;
+  animation-fill-mode: both;
+}
+
+.word-animation:nth-child(1) {
+  animation-delay: 0.1s, 0.1s;
+}
+
+.word-animation:nth-child(2) {
+  animation-delay: 0.3s, 0.3s;
+}
+
+.word-animation:nth-child(3) {
+  animation-delay: 0.5s, 0.5s;
+}
+
+.word-animation:nth-child(4) {
+  animation-delay: 0.7s, 0.7s;
+}
+
+@keyframes wordFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(2px) scale(0.98);
+  }
+}
+
+.medication-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(248, 250, 252, 0.9) 50%,
+    rgba(240, 249, 255, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  animation: elegantSlideIn 0.8s ease-out;
+  animation-fill-mode: both;
+}
+
+.medication-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #1890ff 50%, 
+    #52c41a 75%, 
+    #fa8c16 100%);
+  opacity: 0;
+  transition: all 0.4s ease;
+  border-radius: 24px 24px 0 0;
+}
+
+.medication-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, 
+    rgba(102, 126, 234, 0.1) 0%, 
+    transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.medication-card:hover::before {
+  opacity: 1;
+  transform: scaleX(1.1);
+}
+
+.medication-card:hover::after {
+  opacity: 1;
+}
+
+.medication-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 
+    0 20px 60px rgba(102, 126, 234, 0.15),
+    0 12px 40px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.medication-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.medication-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medication-name {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.medication-icon {
+  font-size: 24px;
+  color: #667eea;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.1) 0%, 
+    rgba(118, 75, 162, 0.1) 100%);
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 
+    0 8px 24px rgba(102, 126, 234, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  transition: all 0.3s ease;
+}
+
+.medication-card:hover .medication-icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 
+    0 12px 32px rgba(102, 126, 234, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.medication-details {
+  margin-left: 52px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a5568;
+  letter-spacing: 0.3px;
+}
+
+.medication-status {
+  margin-left: 52px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, 
+    rgba(82, 196, 26, 0.1) 0%, 
+    rgba(82, 196, 26, 0.05) 100%);
+  border-radius: 25px;
+  display: inline-block;
+  border: 1px solid rgba(82, 196, 26, 0.2);
+  backdrop-filter: blur(10px);
+  font-size: 13px;
+  font-weight: 600;
+  color: #389e0d;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.1);
+  transition: all 0.3s ease;
+}
+
+.medication-card:hover .medication-status {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(82, 196, 26, 0.2);
+}
+
+.medication-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.medicine-finished-text {
+  text-align: right;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, 
+    rgba(250, 140, 22, 0.1) 0%, 
+    rgba(255, 193, 7, 0.05) 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(250, 140, 22, 0.2);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  font-weight: 600;
+  color: #d46b08;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(250, 140, 22, 0.1);
+  transition: all 0.3s ease;
+}
+
+.medication-card:hover .medicine-finished-text {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(250, 140, 22, 0.2);
+}
+
+.pharm-ai-medication-btn {
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 50%, 
+    #667eea 100%) !important;
+  background-size: 200% 200% !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.5px !important;
+  border-radius: 30px !important;
+  padding: 12px 28px !important;
+  height: auto !important;
+  box-shadow: 
+    0 8px 32px rgba(102, 126, 234, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  text-transform: uppercase !important;
+}
+
+.pharm-ai-medication-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.3), 
+    transparent);
+  transition: left 0.6s ease;
+}
+
+.pharm-ai-medication-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pharm-ai-medication-btn:hover::before {
+  left: 100%;
+}
+
+.pharm-ai-medication-btn:hover::after {
+  opacity: 1;
+}
+
+.pharm-ai-medication-btn:hover {
+  background-position: 100% 0 !important;
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow: 
+    0 16px 48px rgba(102, 126, 234, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.pharm-ai-medication-btn:active {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 
+    0 8px 24px rgba(102, 126, 234, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Animation delays for staggered effect */
+.medication-card[data-index="0"] {
+  animation-delay: 0.1s;
+}
+
+.medication-card[data-index="1"] {
+  animation-delay: 0.2s;
+}
+
+.medication-card[data-index="2"] {
+  animation-delay: 0.3s;
+}
+
+.medication-card[data-index="3"] {
+  animation-delay: 0.4s;
+}
+
+.medication-card[data-index="4"] {
+  animation-delay: 0.5s;
+}
+
+@keyframes elegantSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+    filter: blur(10px);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(20px) scale(0.98);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Floating animation for cards */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.medication-card:nth-child(odd) {
+  animation: float 6s ease-in-out infinite;
+}
+
+.medication-card:nth-child(even) {
+  animation: float 6s ease-in-out infinite reverse;
+  animation-delay: 3s;
+}
+
+/* Legacy medication-item styles for backward compatibility */
 .medication-item {
   display: flex;
   justify-content: space-between;
@@ -423,10 +1346,6 @@
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-}
-
-.medication-info {
-  flex: 1;
 }
 
 .medication-refill {
@@ -495,5 +1414,76 @@
   .medication-refill {
     margin: 0;
     text-align: left;
+  }
+
+  /* Mobile responsive medication cards */
+  .medication-card-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .medication-info {
+    margin-bottom: 12px;
+  }
+
+  .medication-name {
+    margin-bottom: 12px;
+  }
+
+  .medication-details,
+  .medication-status {
+    margin-left: 0;
+  }
+
+  .medication-actions {
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .medicine-finished-text {
+    text-align: center;
+  }
+
+  .pharm-ai-medication-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Mobile responsive header */
+  .medications-header {
+    padding: 24px 16px;
+    margin-bottom: 24px;
+  }
+
+  .main-description {
+    font-size: 16px !important;
+    gap: 2px;
+  }
+
+  .description-word {
+    font-size: 16px !important;
+  }
+
+  .pharm-ai-text {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+
+  .animated-tagline {
+    gap: 6px;
+  }
+
+  .word-animation {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .live-indicator {
+    padding: 6px 12px;
+  }
+
+  .live-text {
+    font-size: 10px;
   }
 }

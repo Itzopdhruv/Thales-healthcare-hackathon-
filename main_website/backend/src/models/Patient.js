@@ -33,6 +33,10 @@ const patientSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  profileImage: {
+    type: String,
+    default: null
+  },
   // soft flags
   isActive: {
     type: Boolean,

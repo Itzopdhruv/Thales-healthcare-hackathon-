@@ -20,7 +20,8 @@ import {
   Timeline,
   Tabs,
   Upload,
-  message
+  message,
+  Spin
 } from 'antd';
 import {
   UserOutlined,
@@ -33,7 +34,8 @@ import {
   PlusOutlined,
   BellOutlined,
   SettingOutlined,
-  RobotOutlined
+  RobotOutlined,
+  CameraOutlined
 } from '@ant-design/icons';
 import './PatientDashboard.css';
 
@@ -88,6 +90,10 @@ const PatientDashboard = () => {
     { name: 'Lisinopril', dosage: '10mg', frequency: 'Once daily', nextRefill: '2025-02-20' },
     { name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily', nextRefill: '2025-02-25' }
   ]);
+
+  // Profile image state
+  const [profileImage, setProfileImage] = useState(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const upcomingAppointments = [
     { date: '2025-01-20', time: '10:00 AM', doctor: 'Dr. Rajesh Kumar', specialty: 'Cardiology' },
@@ -149,6 +155,37 @@ const PatientDashboard = () => {
     }
   };
 
+  // Profile image upload handler
+  const handleImageUpload = async (file) => {
+    setImageUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      formData.append('abhaId', user?.abhaId);
+      
+      const response = await fetch('/api/patient/upload-profile-image', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setProfileImage(result.data.imageUrl);
+        message.success('Profile image updated successfully!');
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      message.error('Failed to upload image. Please try again.');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     message.success('Logged out successfully!');
@@ -176,28 +213,47 @@ const PatientDashboard = () => {
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  // Helper function to format nextRefill date
+  const formatNextRefill = (nextRefill) => {
+    if (!nextRefill) return '—';
+    try {
+      const date = new Date(nextRefill);
+      if (isNaN(date.getTime())) return '—';
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch (error) {
+      return '—';
+    }
+  };
+
   // Fetch medications from patient.currentMedications and recent prescriptions
   useEffect(() => {
     const loadMeds = async () => {
       try {
         if (!user?.abhaId) return;
+        console.log('🔄 Loading medications for ABHA ID:', user.abhaId);
         const combined = [];
         const seen = new Set();
 
         // Patient current medications
         const pRes = await patientAPI.lookupPatient(user.abhaId);
         const cm = pRes?.data?.patient?.currentMedications || [];
+        console.log('📋 Current medications from patient:', cm);
         cm.forEach(m => {
           const key = `${m.name}|${m.dosage}|${m.frequency}`;
           if (m.name && !seen.has(key)) {
             seen.add(key);
-            combined.push({ name: m.name, dosage: m.dosage, frequency: m.frequency, nextRefill: m.nextRefill || '—' });
+            combined.push({ name: m.name, dosage: m.dosage, frequency: m.frequency, nextRefill: formatNextRefill(m.nextRefill) });
           }
         });
 
         // Recent prescriptions (last 5)
         const res = await patientAPI.getPrescriptions(user.abhaId, { page: 1, limit: 5 });
         const rx = res?.data?.prescriptions || [];
+        console.log('📋 Recent prescriptions:', rx);
         rx.forEach(pr => {
           (pr.medications || []).forEach(m => {
             const key = `${m.name}|${m.dosage}|${m.frequency}`;
@@ -208,8 +264,10 @@ const PatientDashboard = () => {
           });
         });
 
-        if (combined.length) setMedications(combined);
+        console.log('💊 Combined medications:', combined);
+        setMedications(combined); // Always update, even if empty
       } catch (e) {
+        console.error('❌ Error loading medications:', e);
         // keep fallback meds on error
       }
     };
@@ -218,14 +276,64 @@ const PatientDashboard = () => {
 
   // Listen for cross-page updates (e.g., when a new prescription is created elsewhere)
   useEffect(() => {
-    const onPrescriptionCreated = (e) => {
-      if (!e?.detail?.abhaId || e.detail.abhaId === user?.abhaId) {
-        setReloadTick((x) => x + 1);
+    const onPrescriptionCreated = async (e) => {
+      console.log('📋 Prescription created event received:', e?.detail);
+      console.log('👤 Current user ABHA ID:', user?.abhaId);
+      if (e?.detail?.abhaId && e.detail.abhaId === user?.abhaId) {
+        console.log('✅ ABHA IDs match, reloading medications...');
+        // Add a small delay to ensure backend has processed the prescription
+        setTimeout(async () => {
+          try {
+            // Force immediate refresh by calling the API directly
+            const pRes = await patientAPI.lookupPatient(user.abhaId);
+            const cm = pRes?.data?.patient?.currentMedications || [];
+            console.log('🔄 Direct API call - Current medications:', cm);
+            
+            const res = await patientAPI.getPrescriptions(user.abhaId, { page: 1, limit: 5 });
+            const rx = res?.data?.prescriptions || [];
+            console.log('🔄 Direct API call - Recent prescriptions:', rx);
+            
+            // Update medications immediately
+            const combined = [];
+            const seen = new Set();
+            
+            cm.forEach(m => {
+              const key = `${m.name}|${m.dosage}|${m.frequency}`;
+              if (m.name && !seen.has(key)) {
+                seen.add(key);
+                combined.push({ name: m.name, dosage: m.dosage, frequency: m.frequency, nextRefill: formatNextRefill(m.nextRefill) });
+              }
+            });
+            
+        rx.forEach(pr => {
+          (pr.medications || []).forEach(m => {
+            const key = `${m.name}|${m.dosage}|${m.frequency}`;
+            if (m.name && !seen.has(key)) {
+              seen.add(key);
+              combined.push({ name: m.name, dosage: m.dosage, frequency: m.frequency, nextRefill: formatNextRefill(m.nextRefill) });
+            }
+          });
+        });
+            
+            console.log('💊 Direct update - Combined medications:', combined);
+            setMedications(combined);
+          } catch (error) {
+            console.error('❌ Error in direct medication refresh:', error);
+            // Fallback to normal reload
+            setReloadTick((x) => x + 1);
+          }
+        }, 1000); // Increased delay to 1 second
+      } else {
+        console.log('❌ ABHA IDs do not match, ignoring event');
       }
     };
     const onReportUploaded = (e) => {
-      if (!e?.detail?.abhaId || e.detail.abhaId === user?.abhaId) {
-        setReloadTick((x) => x + 1);
+      console.log('📄 Report uploaded event received:', e?.detail);
+      if (e?.detail?.abhaId && e.detail.abhaId === user?.abhaId) {
+        console.log('✅ ABHA IDs match, reloading data...');
+        setTimeout(() => {
+          setReloadTick((x) => x + 1);
+        }, 500);
       }
     };
     window.addEventListener('prescriptionCreated', onPrescriptionCreated);
@@ -301,54 +409,117 @@ const PatientDashboard = () => {
       </Header>
 
       <Layout>
-        <Sider width={250} className="dashboard-sider">
+        <Sider width={280} className="dashboard-sider">
           <div className="sider-content">
+            {/* Enhanced User Profile Section */}
             <div className="user-profile">
-              <Avatar size={80} icon={<UserOutlined />} />
-              <Title level={5}>{user?.name || 'Patient'}</Title>
-              <Text type="secondary">ABHA ID: {user?.abhaId || 'N/A'}</Text>
+              <div className="profile-image-container">
+                <Upload
+                  name="profileImage"
+                  showUploadList={false}
+                  beforeUpload={(file) => {
+                    const isImage = file.type.startsWith('image/');
+                    if (!isImage) {
+                      message.error('You can only upload image files!');
+                      return false;
+                    }
+                    const isLt2M = file.size / 1024 / 1024 < 2;
+                    if (!isLt2M) {
+                      message.error('Image must be smaller than 2MB!');
+                      return false;
+                    }
+                    handleImageUpload(file);
+                    return false;
+                  }}
+                  accept="image/*"
+                >
+                  <div className="profile-image-wrapper">
+                    {profileImage ? (
+                      <img 
+                        src={profileImage} 
+                        alt="Profile" 
+                        className="profile-image"
+                      />
+                    ) : (
+                      <Avatar size={100} icon={<UserOutlined />} className="profile-avatar" />
+                    )}
+                    <div className="image-overlay">
+                      <CameraOutlined className="camera-icon" />
+                    </div>
+                    {imageUploading && (
+                      <div className="upload-spinner">
+                        <Spin size="small" />
+                      </div>
+                    )}
+                  </div>
+                </Upload>
+              </div>
+              
+              <div className="profile-info">
+                <Title level={4} className="profile-name">
+                  {user?.name || 'Patient'}
+                </Title>
+                <div className="abha-badge">
+                  <Text className="abha-text">ABHA ID: {user?.abhaId || 'N/A'}</Text>
+                </div>
+              </div>
             </div>
             
+            {/* Enhanced Navigation Menu */}
             <div className="sider-menu">
-              <Button 
-                type={activeTab === 'overview' ? 'primary' : 'text'}
-                block
-                className="menu-item"
+              <div 
+                className={`menu-item ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => setActiveTab('overview')}
               >
-                <FileTextOutlined /> Overview
-              </Button>
-              <Button 
-                type={activeTab === 'records' ? 'primary' : 'text'}
-                block
-                className="menu-item"
+                <div className="menu-icon">
+                  <FileTextOutlined />
+                </div>
+                <span className="menu-text">Overview</span>
+                <div className="menu-indicator"></div>
+              </div>
+              
+              <div 
+                className={`menu-item ${activeTab === 'records' ? 'active' : ''}`}
                 onClick={() => setActiveTab('records')}
               >
-                <FileTextOutlined /> Health Records
-              </Button>
-              <Button 
-                type={activeTab === 'appointments' ? 'primary' : 'text'}
-                block
-                className="menu-item"
+                <div className="menu-icon">
+                  <FileTextOutlined />
+                </div>
+                <span className="menu-text">Health Records</span>
+                <div className="menu-indicator"></div>
+              </div>
+              
+              <div 
+                className={`menu-item ${activeTab === 'appointments' ? 'active' : ''}`}
                 onClick={() => setActiveTab('appointments')}
               >
-                <CalendarOutlined /> Appointments
-              </Button>
-              <Button 
-                type={activeTab === 'medications' ? 'primary' : 'text'}
-                block
-                className="menu-item"
+                <div className="menu-icon">
+                  <CalendarOutlined />
+                </div>
+                <span className="menu-text">Appointments</span>
+                <div className="menu-indicator"></div>
+              </div>
+              
+              <div 
+                className={`menu-item ${activeTab === 'medications' ? 'active' : ''}`}
                 onClick={() => setActiveTab('medications')}
               >
-                <MedicineBoxOutlined /> Medications
-              </Button>
+                <div className="menu-icon">
+                  <MedicineBoxOutlined />
+                </div>
+                <span className="menu-text">Medications</span>
+                <div className="menu-indicator"></div>
+              </div>
+            </div>
+            
+            {/* Emergency Button */}
+            <div className="emergency-section">
               <Button 
-                type={activeTab === 'emergency' ? 'primary' : 'text'}
-                block
-                className="menu-item emergency-btn"
-                onClick={() => setActiveTab('emergency')}
+                className="emergency-btn"
+                icon={<HeartOutlined />}
+                onClick={() => setShowAIDoctor(true)}
               >
-                <HeartOutlined /> Emergency
+                Emergency
               </Button>
             </div>
           </div>
@@ -533,20 +704,117 @@ const PatientDashboard = () => {
             )}
 
             {activeTab === 'medications' && (
-              <Card title="Current Medications" className="medications-card">
+              <Card 
+                title="Current Medications" 
+                className="medications-card"
+                extra={
+                  <Button 
+                    type="text" 
+                    icon={<MedicineBoxOutlined />}
+                    onClick={() => {
+                      console.log('🔄 Manual medication refresh triggered');
+                      setReloadTick((x) => x + 1);
+                    }}
+                    style={{ color: '#667eea' }}
+                  >
+                    Refresh
+                  </Button>
+                }
+              >
+                <div className="medications-header">
+                  <div className="header-main-text">
+                    <Text className="main-description">
+                      <span className="description-word">Manage</span>
+                      <span className="description-word">your</span>
+                      <span className="description-word">medications</span>
+                      <span className="description-word">and</span>
+                      <span className="description-word">get</span>
+                      <span className="description-word">AI-powered</span>
+                      <span className="description-word">pharmacy</span>
+                      <span className="description-word">assistance</span>
+                    </Text>
+                  </div>
+                  <div className="pharm-ai-section">
+                    <div className="live-indicator">
+                      <div className="live-dot"></div>
+                      <span className="live-text">LIVE</span>
+                    </div>
+                    <div className="pharm-ai-tagline">
+                      <span className="pharm-ai-text">PHARM AI</span>
+                      <div className="animated-tagline">
+                        <span className="word-animation">OUR</span>
+                        <span className="word-animation">ULTIMATE</span>
+                        <span className="word-animation">PHARMACY</span>
+                        <span className="word-animation">SOLUTION</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>
                   {medications.map((med, index) => (
-                    <div key={index} className="medication-item">
-                      <div className="medication-info">
-                        <Text strong style={{ fontSize: '16px' }}>{med.name}</Text>
-                        <br />
-                        <Text type="secondary">{med.dosage} - {med.frequency}</Text>
-                      </div>
-                      <div className="medication-refill">
-                        <Text type="secondary">Next refill: {med.nextRefill}</Text>
-                        <Button type="link" size="small">
-                          Request Refill
-                        </Button>
+                    <div key={index} className="medication-card" data-index={index}>
+                      <div className="medication-card-content">
+                        <div className="medication-info">
+                          <div className="medication-name">
+                            <MedicineBoxOutlined className="medication-icon" />
+                            <Text strong style={{ 
+                              fontSize: '20px', 
+                              color: '#667eea',
+                              fontWeight: '700',
+                              letterSpacing: '0.5px',
+                              textShadow: '0 2px 4px rgba(102, 126, 234, 0.1)'
+                            }}>
+                              {med.name}
+                            </Text>
+                          </div>
+                          <div className="medication-details">
+                            <Text type="secondary" style={{ fontSize: '14px' }}>
+                              {med.dosage} - {med.frequency}
+                            </Text>
+                          </div>
+                          <div className="medication-status">
+                            <Text type="secondary" style={{ fontSize: '13px' }}>
+                              Next refill: {med.nextRefill}
+                            </Text>
+                          </div>
+                        </div>
+                        <div className="medication-actions">
+                          <div className="medicine-finished-text">
+                            <Text type="secondary" style={{ fontSize: '12px', fontStyle: 'italic' }}>
+                              Medicine finished? Use Pharm AI
+                            </Text>
+                          </div>
+                          <Button 
+                            type="primary" 
+                            className="pharm-ai-medication-btn"
+                            onClick={() => {
+                              // Try multiple ports for Pharm AI
+                              const ports = [3000, 3001, 3003, 3004, 3005];
+                              let opened = false;
+                              
+                              // Try each port
+                              for (let i = 0; i < ports.length; i++) {
+                                const port = ports[i];
+                                try {
+                                  const newWindow = window.open(`http://localhost:${port}`, '_blank');
+                                  if (newWindow) {
+                                    opened = true;
+                                    console.log(`Trying Pharm AI on port ${port}`);
+                                    break;
+                                  }
+                                } catch (error) {
+                                  console.log(`Port ${port} failed:`, error);
+                                }
+                              }
+                              
+                              if (!opened) {
+                                alert('Pharm AI is not running. Please start it by running:\n\ncd "Pharm Ai"\nnpm run dev\n\nThen try clicking the button again.');
+                              }
+                            }}
+                          >
+                            🏥 Pharm AI
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

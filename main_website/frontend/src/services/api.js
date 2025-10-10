@@ -28,8 +28,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      console.log('🚫 401 Unauthorized - clearing auth data');
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('authType');
+      localStorage.removeItem('user');
+      // Don't force reload, let React Router handle navigation
+      console.log('🔄 Auth data cleared, React Router will handle redirect');
     }
     return Promise.reject(error);
   }

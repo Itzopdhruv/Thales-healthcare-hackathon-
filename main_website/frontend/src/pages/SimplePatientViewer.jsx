@@ -11,7 +11,6 @@ import {
   Typography, 
   Select,
   Space,
-  DatePicker,
   Row,
   Col,
   Tag,
@@ -74,6 +73,11 @@ const SimplePatientViewer = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Medication form states
+  const [medications, setMedications] = useState([
+    { name: '', dosage: '', frequency: '', nextRefill: '' }
+  ]);
+  
   // Data states
   const [patient, setPatient] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState([]);
@@ -94,6 +98,23 @@ const SimplePatientViewer = () => {
     navigate('/login');
     return null;
   }
+
+  // Medication management functions
+  const addMedication = () => {
+    setMedications([...medications, { name: '', dosage: '', frequency: '', nextRefill: '' }]);
+  };
+
+  const removeMedication = (index) => {
+    if (medications.length > 1) {
+      setMedications(medications.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateMedication = (index, field, value) => {
+    const updatedMedications = [...medications];
+    updatedMedications[index][field] = value;
+    setMedications(updatedMedications);
+  };
 
   const handleDurationSubmit = () => {
     console.log('Duration selected:', duration);
@@ -308,33 +329,15 @@ const SimplePatientViewer = () => {
     try {
       setLoading(true);
       
-      // Parse medications from textarea
-      const medicationsArray = [];
-      if (values.medications) {
-        const medicationLines = values.medications.split('\n').filter(line => line.trim());
-        medicationLines.forEach(line => {
-          const parts = line.split(' - ');
-          if (parts.length >= 3) {
-            medicationsArray.push({
-              name: parts[0].trim(),
-              dosage: parts[1].trim(),
-              frequency: parts[2].trim()
-            });
-          } else if (parts.length === 2) {
-            medicationsArray.push({
-              name: parts[0].trim(),
-              dosage: parts[1].trim(),
-              frequency: 'As directed'
-            });
-          } else if (parts.length === 1) {
-            medicationsArray.push({
-              name: parts[0].trim(),
-              dosage: 'As directed',
-              frequency: 'As directed'
-            });
-          }
-        });
-      }
+      // Filter out empty medications and prepare structured data
+      const medicationsArray = medications
+        .filter(med => med.name.trim() !== '')
+        .map(med => ({
+          name: med.name.trim(),
+          dosage: med.dosage.trim() || 'As directed',
+          frequency: med.frequency.trim() || 'As directed',
+          nextRefill: med.nextRefill.trim() || null
+        }));
       
       const prescriptionData = {
         abhaId: patientId,
@@ -367,6 +370,7 @@ const SimplePatientViewer = () => {
         message.success('Prescription created successfully!');
         setAddPrescriptionModalVisible(false);
         addPrescriptionForm.resetFields();
+        setMedications([{ name: '', dosage: '', frequency: '', nextRefill: '' }]); // Reset medications
         fetchPatientData(); // Refresh data
         // Broadcast event so patient dashboard can reload meds without full refresh
         window.dispatchEvent(new CustomEvent('prescriptionCreated', { detail: { abhaId: patientId } }));
@@ -2260,10 +2264,14 @@ const SimplePatientViewer = () => {
         onCancel={() => {
           setAddPrescriptionModalVisible(false);
           addPrescriptionForm.resetFields();
+          setMedications([{ name: '', dosage: '', frequency: '', nextRefill: '' }]); // Reset medications
         }}
         footer={null}
         centered
         width={700}
+        destroyOnClose={true}
+        getContainer={false}
+        style={{ zIndex: 1000 }}
       >
         <Form
           form={addPrescriptionForm}
@@ -2353,16 +2361,107 @@ const SimplePatientViewer = () => {
             <Input placeholder="e.g., Diabetes Type 2" />
           </Form.Item>
 
-          <Form.Item
-            name="medications"
-            label="Medications"
-            rules={[{ required: true, message: 'Please enter at least one medication' }]}
-          >
-            <Input.TextArea 
-              rows={4} 
-              placeholder="Enter medications, one per line. Format: Medication Name - Dosage - Frequency&#10;e.g.,&#10;Paracetamol - 500mg - Twice daily&#10;Amoxicillin - 250mg - Three times daily" 
-            />
-          </Form.Item>
+          {/* Structured Medications Form */}
+          <div style={{ marginBottom: '24px' }}>
+            <Title level={4} style={{ marginBottom: '16px', color: '#1890ff' }}>
+              <MedicineBoxOutlined style={{ marginRight: '8px' }} />
+              Medications *
+            </Title>
+            {medications.map((medication, index) => (
+              <Card 
+                key={index} 
+                size="small" 
+                style={{ 
+                  marginBottom: '16px', 
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '8px'
+                }}
+                title={`Medication ${index + 1}`}
+                extra={
+                  medications.length > 1 && (
+                    <Button 
+                      type="text" 
+                      danger 
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeMedication(index)}
+                    >
+                      Remove
+                    </Button>
+                  )
+                }
+              >
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      label="Medicine Name"
+                      required
+                      style={{ marginBottom: '12px' }}
+                    >
+                      <Input
+                        placeholder="e.g., Paracetamol"
+                        value={medication.name}
+                        onChange={(e) => updateMedication(index, 'name', e.target.value)}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      label="Dosage"
+                      style={{ marginBottom: '12px' }}
+                    >
+                      <Input
+                        placeholder="e.g., 500mg"
+                        value={medication.dosage}
+                        onChange={(e) => updateMedication(index, 'dosage', e.target.value)}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      label="Frequency"
+                      style={{ marginBottom: '12px' }}
+                    >
+                      <Input
+                        placeholder="e.g., Twice daily"
+                        value={medication.frequency}
+                        onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      label="Next Refill Date"
+                      style={{ marginBottom: '12px' }}
+                    >
+                      <Input
+                        type="date"
+                        style={{ width: '100%' }}
+                        placeholder="Select refill date"
+                        value={medication.nextRefill || ''}
+                        onChange={(e) => updateMedication(index, 'nextRefill', e.target.value)}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              </Card>
+            ))}
+            <Button 
+              type="dashed" 
+              onClick={addMedication}
+              icon={<PlusOutlined />}
+              style={{ 
+                width: '100%', 
+                height: '40px',
+                border: '2px dashed #1890ff',
+                color: '#1890ff'
+              }}
+            >
+              Add Another Medication
+            </Button>
+          </div>
 
           <Form.Item
             name="instructions"
@@ -2412,6 +2511,7 @@ const SimplePatientViewer = () => {
                 onClick={() => {
                   setAddPrescriptionModalVisible(false);
                   addPrescriptionForm.resetFields();
+                  setMedications([{ name: '', dosage: '', frequency: '', nextRefill: '' }]); // Reset medications
                 }}
                 style={{ marginRight: 8 }}
               >
@@ -2557,10 +2657,14 @@ const SimplePatientViewer = () => {
         onCancel={() => {
           setAddPrescriptionModalVisible(false);
           addPrescriptionForm.resetFields();
+          setMedications([{ name: '', dosage: '', frequency: '', nextRefill: '' }]); // Reset medications
         }}
         footer={null}
         centered
         width={700}
+        destroyOnClose={true}
+        getContainer={false}
+        style={{ zIndex: 1000 }}
       >
         <Form
           form={addPrescriptionForm}

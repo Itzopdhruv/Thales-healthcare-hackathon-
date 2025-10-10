@@ -159,11 +159,39 @@ const LandingPage = () => {
             <Tag color="green" className="beta-tag">BETA</Tag>
           </div>
           <nav className="nav-links">
-            <a href="#features">Features</a>
-            <a href="#network">Network</a>
-            <a href="#testimonials">Testimonials</a>
-            <a href="#about">About Us</a>
-            <a href="#pharmacist">Provider Portal</a>
+            <a href="#features" className="nav-link">Features</a>
+            <a href="#network" className="nav-link">Network</a>
+            <a href="#testimonials" className="nav-link">Testimonials</a>
+            <a href="#about" className="nav-link">About Us</a>
+            <button 
+              className="pharm-ai-btn"
+              onClick={() => {
+                // Try multiple ports for Pharm AI
+                const ports = [3000, 3001, 3003, 3004, 3005];
+                let opened = false;
+                
+                // Try each port
+                for (let i = 0; i < ports.length; i++) {
+                  const port = ports[i];
+                  try {
+                    const newWindow = window.open(`http://localhost:${port}`, '_blank');
+                    if (newWindow) {
+                      opened = true;
+                      console.log(`Trying Pharm AI on port ${port}`);
+                      break;
+                    }
+                  } catch (error) {
+                    console.log(`Port ${port} failed:`, error);
+                  }
+                }
+                
+                if (!opened) {
+                  alert('Pharm AI is not running. Please start it by running:\n\ncd "Pharm Ai"\nnpm run dev\n\nThen try clicking the button again.');
+                }
+              }}
+            >
+              Pharm AI
+            </button>
           </nav>
           <Space>
             <Button 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PatientAppointmentBooking.css';
+import VideoCallButton from './VideoCallButton';
 
 const PatientAppointmentBooking = () => {
   const [specialties, setSpecialties] = useState([]);
@@ -13,12 +14,32 @@ const PatientAppointmentBooking = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [lockedSlots, setLockedSlots] = useState(new Set());
   const [userAppointments, setUserAppointments] = useState([]);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [bookingData, setBookingData] = useState({
+    abhaId: '',
+    reason: '',
+    consultationFee: 0
+  });
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
 
   // Booking flow states
-  const [currentStep, setCurrentStep] = useState(1); // 1: Specialty, 2: Doctor, 3: Date/Time, 4: Confirmation
-  const [bookingData, setBookingData] = useState({});
+  const [currentStep, setCurrentStep] = useState(1); // 1: Specialty, 2: Doctor, 3: Date, 4: Time, 5: Confirmation
 
   useEffect(() => {
+    // Get ABHA ID from the logged-in patient data
+    const patientData = JSON.parse(localStorage.getItem('patientData') || '{}');
+    const abhaId = patientData.abhaId || '54-50-97-31'; // Use actual patient's ABHA ID
+    
+    if (!localStorage.getItem('abhaId')) {
+      localStorage.setItem('abhaId', abhaId);
+      console.log('🆔 Using ABHA ID from patient data:', abhaId);
+    }
+    
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setSelectedDate(tomorrow.toISOString().split('T')[0]);
+    
     loadSpecialties();
     loadUserAppointments();
   }, []);
@@ -39,7 +60,7 @@ const PatientAppointmentBooking = () => {
     try {
       const response = await fetch('/api/appointments/specialties');
       const data = await response.json();
-      setSpecialties(data.data);
+      setSpecialties(Array.isArray(data.data) ? data.data : []);
     } catch (error) {
       console.error('Error loading specialties:', error);
     }
@@ -67,74 +88,155 @@ const PatientAppointmentBooking = () => {
 
   const loadUserAppointments = async () => {
     try {
-      const patientId = localStorage.getItem('patientId'); // Assuming patient ID is stored
-      if (patientId) {
-        const response = await fetch(`/api/appointments/patient/${patientId}`);
+      setIsLoadingAppointments(true);
+      const abhaId = localStorage.getItem('abhaId'); // Use ABHA ID as primary identifier
+      if (abhaId) {
+        const response = await fetch(`/api/appointments/patient/abha/${abhaId}`);
         const data = await response.json();
-        setUserAppointments(data.data);
+        
+        if (data.data && data.data.length > 0) {
+          // Separate appointments by status
+          const scheduledAppointments = data.data.filter(apt => apt.status === 'SCHEDULED');
+          const cancelledAppointments = data.data.filter(apt => apt.status === 'CANCELLED');
+          const otherAppointments = data.data.filter(apt => apt.status !== 'SCHEDULED' && apt.status !== 'CANCELLED');
+          
+          // Limit cancelled appointments to maximum 3
+          const limitedCancelledAppointments = cancelledAppointments.slice(0, 3);
+          
+          // Combine all appointments with cancelled ones limited
+          const filteredAppointments = [
+            ...scheduledAppointments,
+            ...otherAppointments,
+            ...limitedCancelledAppointments
+          ];
+          
+          // Sort by appointment date (newest first)
+          filteredAppointments.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate));
+          
+          console.log('📅 Loaded appointments:', {
+            total: data.data.length,
+            scheduled: scheduledAppointments.length,
+            cancelled: cancelledAppointments.length,
+            limitedCancelled: limitedCancelledAppointments.length,
+            final: filteredAppointments.length
+          });
+          
+          setUserAppointments(filteredAppointments);
+        } else {
+          setUserAppointments([]);
+        }
+      } else {
+        setUserAppointments([]);
       }
     } catch (error) {
       console.error('Error loading appointments:', error);
+      setUserAppointments([]);
+    } finally {
+      setIsLoadingAppointments(false);
     }
   };
 
-  const handleSpecialtySelect = (specialtyId) => {
+  const handleSpecialtySelect = async (specialtyId) => {
     setSelectedSpecialty(specialtyId);
     setSelectedDoctor('');
     setSelectedSlot('');
+    setAvailableSlots([]);
     setCurrentStep(2);
+    
+    // Load doctors for this specialty (without date filter)
+    try {
+      const response = await fetch(`/api/appointments/doctors/specialty/${specialtyId}`);
+      const data = await response.json();
+      setDoctors(data.data);
+    } catch (error) {
+      console.error('Error loading doctors:', error);
+    }
   };
 
   const handleDoctorSelect = (doctorId) => {
     setSelectedDoctor(doctorId);
     setSelectedSlot('');
+    setAvailableSlots([]);
     setCurrentStep(3);
   };
 
-  const handleSlotSelect = async (slotId) => {
+  const handleDateSelect = async (date) => {
+    setSelectedDate(date);
+    setSelectedSlot('');
+    setAvailableSlots([]);
+    
+    if (selectedDoctor && date) {
+      // Load slots for the selected doctor and date
+      try {
+        const response = await fetch(`/api/appointments/doctors/${selectedDoctor}/slots?date=${date}`);
+        const data = await response.json();
+        setAvailableSlots(data.data);
+        setCurrentStep(4); // Move to time slot selection
+      } catch (error) {
+        console.error('Error loading slots:', error);
+      }
+    }
+  };
+
+  const handleSlotSelect = (slotId) => {
+    console.log('🎯 Slot selected:', slotId);
+    console.log('🎯 Available slots:', availableSlots);
+    
     if (lockedSlots.has(slotId)) {
       alert('This slot is currently being booked by another user. Please try another slot.');
       return;
     }
 
     setSelectedSlot(slotId);
-    
-    // Lock the slot to prevent duplicate bookings
-    try {
-      const response = await fetch(`/api/appointments/slots/${slotId}/lock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientId: localStorage.getItem('patientId') })
-      });
-
-      if (response.ok) {
-        setLockedSlots(prev => new Set([...prev, slotId]));
-        setCurrentStep(4);
-      } else {
-        alert('Failed to lock slot. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error locking slot:', error);
-      alert('Error locking slot. Please try again.');
-    }
+    setCurrentStep(5); // Move to confirmation step
   };
 
   const handleBookAppointment = async () => {
-    if (!selectedSlot || !reasonForVisit.trim()) {
-      alert('Please select a slot and provide reason for visit.');
+    if (!selectedSlot || !bookingData.reason.trim() || !bookingData.abhaId.trim()) {
+      alert('Please fill in all required fields.');
       return;
     }
 
+    console.log('🔍 Debug - Selected Slot ID:', selectedSlot);
+    console.log('🔍 Debug - Booking Data:', bookingData);
+    console.log('🔍 Debug - Selected Doctor:', selectedDoctor);
+
     setIsBooking(true);
     try {
+      // Get patient data from localStorage
+      const patientData = JSON.parse(localStorage.getItem('patientData') || '{}');
+      
+      // First lock the slot
+      console.log(`🔒 Attempting to lock slot: ${selectedSlot}`);
+      const lockResponse = await fetch(`/api/appointments/slots/${selectedSlot}/lock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ abhaId: localStorage.getItem('abhaId') })
+      });
+
+      console.log('🔒 Lock response status:', lockResponse.status);
+      
+      if (!lockResponse.ok) {
+        const lockError = await lockResponse.json();
+        console.error('❌ Lock error:', lockError);
+        alert(lockError.message || 'Failed to lock slot. Please try again.');
+        return;
+      }
+      
+      const lockData = await lockResponse.json();
+      console.log('✅ Slot locked successfully:', lockData);
+
+      // Then book the appointment
       const response = await fetch('/api/appointments/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patientId: localStorage.getItem('patientId'),
+          abhaId: localStorage.getItem('abhaId'), // Use ABHA ID as primary identifier
           doctorId: selectedDoctor,
           slotId: selectedSlot,
-          reasonForVisit: reasonForVisit.trim()
+          reasonForVisit: bookingData.reason.trim(),
+          patientName: patientData.name || 'RAVI YADAV', // Use actual patient's name
+          patientPhone: patientData.phone || '+91-9876543210' // Use actual patient's phone
         })
       });
 
@@ -150,6 +252,8 @@ const PatientAppointmentBooking = () => {
         setReasonForVisit('');
         setCurrentStep(1);
         setLockedSlots(new Set());
+        setShowBookingDialog(false);
+        setBookingData({ abhaId: '', reason: '', consultationFee: 0 });
         
         // Reload appointments
         loadUserAppointments();
@@ -187,6 +291,12 @@ const PatientAppointmentBooking = () => {
         if (response.ok) {
           alert('Appointment cancelled successfully!');
           loadUserAppointments();
+          
+          // Reload available slots if we're currently viewing slots for the same doctor and date
+          if (selectedDoctor && selectedDate) {
+            console.log('🔄 Reloading available slots after cancellation...');
+            await loadAvailableSlots(selectedDoctor, selectedDate);
+          }
         } else {
           alert('Failed to cancel appointment. Please try again.');
         }
@@ -207,11 +317,6 @@ const PatientAppointmentBooking = () => {
     return 'doctor-btn';
   };
 
-  const getSlotButtonClass = (slotId) => {
-    if (selectedSlot === slotId) return 'slot-btn selected';
-    if (lockedSlots.has(slotId)) return 'slot-btn locked';
-    return 'slot-btn';
-  };
 
   return (
     <div className="patient-appointment-booking">
@@ -222,7 +327,7 @@ const PatientAppointmentBooking = () => {
         <div className="booking-step">
           <h3>Select Medical Specialty</h3>
           <div className="specialty-selection">
-            {specialties.map(specialty => (
+            {(specialties || []).map(specialty => (
               <button
                 key={specialty._id}
                 className={getSpecialtyButtonClass(specialty._id)}
@@ -241,23 +346,15 @@ const PatientAppointmentBooking = () => {
           <h3>Select Doctor</h3>
           <div className="doctor-selection">
             {doctors.map(doctor => (
-              <div key={doctor._id} className="doctor-card">
-                <div className="doctor-info">
-                  <h4>Dr. {doctor.name}</h4>
-                  <p>{doctor.specialty.name}</p>
-                  <p>Consultation Fee: ₹{doctor.consultationFee}</p>
-                  {doctor.availableSlots && (
-                    <p className="available-slots">
-                      {doctor.availableSlots.length} slots available today
-                    </p>
-                  )}
-                </div>
-                <button
-                  className={getDoctorButtonClass(doctor._id)}
-                  onClick={() => handleDoctorSelect(doctor._id)}
-                >
-                  Select Doctor
-                </button>
+              <div
+                key={doctor._id}
+                className={`doctor-card ${selectedDoctor === doctor._id ? 'selected' : ''}`}
+                onClick={() => handleDoctorSelect(doctor._id)}
+              >
+                <h4>Dr. {doctor.name}</h4>
+                <p>Specialty: {doctor.specialty.name}</p>
+                <p>Consultation Fee: ₹{doctor.consultationFee}</p>
+                <p>Experience: {doctor.experience || 'Not specified'}</p>
               </div>
             ))}
           </div>
@@ -267,34 +364,76 @@ const PatientAppointmentBooking = () => {
         </div>
       )}
 
-      {/* Step 3: Date and Time Selection */}
+      {/* Step 3: Date Selection */}
       {currentStep === 3 && (
         <div className="booking-step">
-          <h3>Select Date and Time</h3>
-          <div className="date-time-selection">
+          <h3>Select Date</h3>
+          <div className="date-selection">
             <div className="date-picker">
-              <label>Select Date:</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-              />
+              <label>Select Date</label>
+              <p className="date-instruction">Choose your preferred date:</p>
+              <div className="date-input-container">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => handleDateSelect(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              {selectedDate && (
+                <div className="selected-date-display">
+                  📅 Selected: {new Date(selectedDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="selected-doctor-info">
+              <h4>Selected Doctor:</h4>
+              <div className="doctor-card">
+                <h5>Dr. {doctors.find(d => d._id === selectedDoctor)?.name}</h5>
+                <p>Specialty: {specialties.find(s => s._id === selectedSpecialty)?.name}</p>
+                <p>Consultation Fee: ₹{doctors.find(d => d._id === selectedDoctor)?.consultationFee}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Time Slot Selection */}
+      {currentStep === 4 && (
+        <div className="booking-step">
+          <h3>Select Time Slot</h3>
+          <div className="time-selection">
+            <div className="selected-info">
+              <p><strong>Date:</strong> {new Date(selectedDate).toLocaleDateString()}</p>
+              <p><strong>Doctor:</strong> Dr. {doctors.find(d => d._id === selectedDoctor)?.name}</p>
             </div>
             
             {availableSlots.length > 0 ? (
               <div className="time-slots">
                 <h4>Available Time Slots:</h4>
-                <div className="slots-grid">
+                <div className="time-slots-display">
                   {availableSlots.map(slot => (
-                    <button
+                    <div
                       key={slot._id}
-                      className={getSlotButtonClass(slot._id)}
-                      onClick={() => handleSlotSelect(slot._id)}
-                      disabled={lockedSlots.has(slot._id)}
+                      className={`time-slot-card ${selectedSlot === slot._id ? 'selected' : ''} ${lockedSlots.has(slot._id) ? 'booked' : ''}`}
+                      onClick={() => !lockedSlots.has(slot._id) && handleSlotSelect(slot._id)}
                     >
-                      {slot.startTime} - {slot.endTime}
-                    </button>
+                      <div className="time-slot-time">
+                        {slot.startTime} - {slot.endTime}
+                      </div>
+                      <div className="time-slot-duration">
+                        {slot.durationMinutes} minutes
+                      </div>
+                      <div className="time-slot-status">
+                        {lockedSlots.has(slot._id) ? 'Locked' : selectedSlot === slot._id ? 'Selected' : 'Available'}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -310,8 +449,8 @@ const PatientAppointmentBooking = () => {
         </div>
       )}
 
-      {/* Step 4: Confirmation */}
-      {currentStep === 4 && (
+      {/* Step 5: Confirmation */}
+      {currentStep === 5 && (
         <div className="booking-step">
           <h3>Confirm Appointment</h3>
           <div className="confirmation-details">
@@ -351,44 +490,208 @@ const PatientAppointmentBooking = () => {
           <div className="confirmation-actions">
             <button
               className="book-btn"
-              onClick={handleBookAppointment}
-              disabled={isBooking || !reasonForVisit.trim()}
+              onClick={() => {
+                // Show booking dialog with pre-filled data
+                const selectedSlotData = availableSlots.find(slot => slot._id === selectedSlot);
+                const selectedDoctorData = doctors.find(doc => doc._id === selectedDoctor);
+                
+                if (selectedSlotData && selectedDoctorData) {
+                  setBookingData({
+                    abhaId: localStorage.getItem('abhaId') || '',
+                    reason: reasonForVisit,
+                    consultationFee: selectedDoctorData.consultationFee || 500
+                  });
+                  setShowBookingDialog(true);
+                }
+              }}
+              disabled={!reasonForVisit.trim()}
             >
-              {isBooking ? 'Booking...' : 'Confirm Booking'}
+              Confirm Booking
             </button>
             <button className="cancel-btn" onClick={handleCancelBooking}>
               Cancel
             </button>
+          </div>
+          
+          <button className="back-btn" onClick={() => setCurrentStep(4)}>
+            Back to Time Slots
+          </button>
+        </div>
+      )}
+
+      {/* Booking Confirmation Dialog */}
+      {showBookingDialog && (
+        <div className="booking-dialog-overlay">
+          <div className="booking-dialog">
+            <div className="booking-dialog-header">
+              <h3>Confirm Your Appointment</h3>
+              <button 
+                className="close-dialog-btn"
+                onClick={() => setShowBookingDialog(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="booking-dialog-content">
+              <div className="appointment-summary">
+                <h4>Appointment Details</h4>
+                <div className="summary-row">
+                  <span>Doctor:</span>
+                  <span>Dr. {doctors.find(d => d._id === selectedDoctor)?.name}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Specialty:</span>
+                  <span>{doctors.find(d => d._id === selectedDoctor)?.specialty?.name}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Time:</span>
+                  <span>{availableSlots.find(s => s._id === selectedSlot)?.startTime} - {availableSlots.find(s => s._id === selectedSlot)?.endTime}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Date:</span>
+                  <span>{new Date(selectedDate || new Date()).toLocaleDateString()}</span>
+                </div>
+                <div className="summary-row fee-row">
+                  <span>Consultation Fee:</span>
+                  <span className="fee-amount">₹{bookingData.consultationFee}</span>
+                </div>
+              </div>
+
+              <div className="booking-form">
+                <div className="form-group">
+                  <label htmlFor="abhaId">ABHA ID *</label>
+                  <input
+                    type="text"
+                    id="abhaId"
+                    value={bookingData.abhaId}
+                    onChange={(e) => setBookingData({...bookingData, abhaId: e.target.value})}
+                    placeholder="Enter your ABHA ID"
+                    className="booking-input"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="reason">Reason for Visit *</label>
+                  <textarea
+                    id="reason"
+                    value={bookingData.reason}
+                    onChange={(e) => setBookingData({...bookingData, reason: e.target.value})}
+                    placeholder="Please describe your symptoms or reason for the appointment"
+                    className="booking-textarea"
+                    rows="4"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="booking-dialog-actions">
+              <button 
+                className="cancel-booking-btn"
+                onClick={() => setShowBookingDialog(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-booking-btn"
+                onClick={handleBookAppointment}
+                disabled={isBooking || !bookingData.abhaId.trim() || !bookingData.reason.trim()}
+              >
+                {isBooking ? 'Booking...' : 'Book Appointment'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* User's Appointments */}
       <div className="user-appointments">
-        <h3>Your Appointments</h3>
-        {userAppointments.length > 0 ? (
+        <div className="appointments-header">
+          <h3>Your Appointments</h3>
+          <button 
+            className="refresh-btn" 
+            onClick={loadUserAppointments}
+            disabled={isLoadingAppointments}
+          >
+            {isLoadingAppointments ? '🔄 Loading...' : '🔄 Refresh'}
+          </button>
+        </div>
+        {isLoadingAppointments ? (
+          <div className="loading-appointments">
+            <p>Loading your appointments...</p>
+          </div>
+        ) : userAppointments && userAppointments.length > 0 ? (
           <div className="appointments-list">
-            {userAppointments.map(appointment => (
-              <div key={appointment._id} className="appointment-card">
-                <div className="appointment-info">
-                  <h4>Dr. {appointment.doctor.name}</h4>
-                  <p>{appointment.specialty.name}</p>
-                  <p>{new Date(appointment.appointmentDate).toLocaleDateString()} at {appointment.appointmentTime}</p>
-                  <p className={`status ${appointment.status.toLowerCase()}`}>
-                    {appointment.status}
+            {userAppointments
+              .sort((a, b) => new Date(b.createdAt || b.appointmentDate) - new Date(a.createdAt || a.appointmentDate))
+              .slice(0, 6)
+              .map(appointment => (
+              <div key={appointment._id} className="appointment-card" data-status={appointment.status}>
+                {/* Card Header */}
+                <div className="appointment-card-header">
+                  <h4 className="doctor-name">Dr. {appointment.doctor?.name || 'Unknown Doctor'}</h4>
+                  <p className="specialty-name">{appointment.specialty?.name || 'Unknown Specialty'}</p>
+                  <p className="appointment-datetime">
+                    {new Date(appointment.appointmentDate).toLocaleDateString()} at {appointment.appointmentTime}
                   </p>
-                  {appointment.reasonForVisit && (
-                    <p className="reason">Reason: {appointment.reasonForVisit}</p>
-                  )}
                 </div>
-                {appointment.status === 'SCHEDULED' && (
-                  <button
-                    className="cancel-appointment-btn"
-                    onClick={() => handleCancelAppointment(appointment._id)}
-                  >
-                    Cancel
-                  </button>
-                )}
+
+                {/* Card Body */}
+                <div className="appointment-card-body">
+                  <div className="appointment-info">
+                    {/* Reason Section */}
+                    {appointment.reasonForVisit && (
+                      <div className="appointment-reason">
+                        <p className="reason-label">Reason for Visit</p>
+                        <p className="reason-text">{appointment.reasonForVisit}</p>
+                      </div>
+                    )}
+
+                    {/* Status Badge */}
+                    <div className="appointment-status">
+                      <span className={`status-badge ${appointment.status.toLowerCase()}`}>
+                        {appointment.status}
+                      </span>
+                    </div>
+
+                    {/* Meeting ID Display */}
+                    {appointment.virtualMeetingLink && (
+                      <div className="meeting-id-display">
+                        <span className="meeting-id-label">🎥 Meeting ID:</span>
+                        <span className="meeting-id-text">
+                          {appointment.virtualMeetingLink.split('/').pop()}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    {appointment.status === 'SCHEDULED' && (
+                      <div className="appointment-actions">
+                        <button
+                          className="cancel-appointment-btn"
+                          onClick={() => handleCancelAppointment(appointment._id)}
+                        >
+                          Cancel Appointment
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Video Call Button */}
+                    <VideoCallButton 
+                      appointment={appointment}
+                      userType="patient"
+                      onCallStart={(appointmentId, meetingLink) => {
+                        console.log('Patient started call for appointment:', appointmentId);
+                        // Optionally update appointment status
+                      }}
+                      onCallEnd={(appointmentId) => {
+                        console.log('Patient ended call for appointment:', appointmentId);
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>

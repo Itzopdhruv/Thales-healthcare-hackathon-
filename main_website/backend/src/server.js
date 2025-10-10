@@ -45,8 +45,12 @@ import aiAssistantRoutes from './routes/aiAssistant.js';
 import aiDoctorRoutes from './routes/aiDoctor.js';
 import appointmentRoutes from './routes/appointmentRoutes.js';
 import adminAppointmentRoutes from './routes/adminAppointmentRoutes.js';
+import meetingRoutes from './routes/meetingRoutes.js';
+import recordingRoutes from './routes/recordingRoutes.js';
 import { summarizeReportWithGemini, testGeminiPrompt } from './services/geminiService.js';
 import WebSocketService from './services/WebSocketService.js';
+import { addMigrationEndpoint } from './utils/migrateJitsiIds.js';
+import { addFixEndpoint } from './utils/fixAppointmentMeetingIds.js';
 
 // Load environment variables
 dotenv.config();
@@ -81,10 +85,13 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
 // MongoDB connection
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dhruv:Dhruv2006@cluster0.k9jzv1l.mongodb.net/aayulink?retryWrites=true&w=majority';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://premyadavptts_db_user:qUoeB8QVKwigzaMt@cluster4.leu26pe.mongodb.net/';
     
     await mongoose.connect(mongoURI, {
       // Remove deprecated options
@@ -116,6 +123,16 @@ app.use('/api/ai-assistant', aiAssistantRoutes);
 app.use('/api/ai-doctor', aiDoctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/admin/appointments', adminAppointmentRoutes);
+app.use('/api/meetings', meetingRoutes);
+app.use('/api/recordings', recordingRoutes);
+
+// CORS configuration for file uploads
+app.use('/api/recordings', cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3002',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -207,9 +224,30 @@ const webSocketService = new WebSocketService(server);
 // Make WebSocket service available globally for use in controllers
 global.webSocketService = webSocketService;
 
+// Add migration endpoint for Jitsi IDs
+addMigrationEndpoint(app);
+
+// Add fix endpoint for appointment meeting IDs
+addFixEndpoint(app);
+
 server.listen(PORT, () => {
   console.log(`🚀 AayuLink Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
   console.log(`🔌 WebSocket service initialized`);
+  
+  // Check Google Cloud configuration
+  const hasGoogleCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const hasGoogleProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+  
+  if (!hasGoogleCredentials || !hasGoogleProjectId) {
+    console.log(`\n⚠️  GOOGLE CLOUD SPEECH-TO-TEXT NOT CONFIGURED`);
+    console.log(`   This means audio recordings will use mock transcription instead of real speech recognition`);
+    console.log(`   To enable real transcription, add to your .env file:`);
+    if (!hasGoogleCredentials) console.log(`   - GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json`);
+    if (!hasGoogleProjectId) console.log(`   - GOOGLE_CLOUD_PROJECT_ID=your-project-id`);
+    console.log(`\n`);
+  } else {
+    console.log(`✅ Google Cloud Speech-to-Text configured`);
+  }
 });
