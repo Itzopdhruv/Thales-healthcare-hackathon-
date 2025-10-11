@@ -2,7 +2,7 @@
 .ai-therapist-modal {
   max-width: 95vw !important;
   width: 1400px !important;
-  top: 20px !important;
+  top: 5vh !important;
   animation: modalSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -121,7 +121,8 @@
 }
 
 .ai-therapist-container {
-  height: 700px;
+  height: 85vh;
+  min-height: 600px;
   background: rgba(255, 255, 255, 0.98);
   border-radius: 20px;
   overflow: hidden;
@@ -177,8 +178,8 @@
 
 /* Tab Content Areas */
 .therapy-tab-content {
-  height: 75vh;
-  min-height: 450px;
+  height: calc(85vh - 60px);
+  min-height: 540px;
   padding: 0;
   overflow: hidden;
 }
@@ -191,8 +192,8 @@
 
 /* Camera Container - Left Side */
 .camera-container {
-  height: 75vh;
-  min-height: 450px;
+  height: calc(85vh - 60px);
+  min-height: 540px;
   border: none;
   box-shadow: none;
   background: transparent;
@@ -218,8 +219,8 @@
 
 .camera-container .ant-card-body {
   padding: 16px;
-  height: calc(75vh - 120px);
-  min-height: calc(450px - 120px);
+  height: calc(85vh - 180px);
+  min-height: calc(540px - 180px);
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
@@ -228,8 +229,8 @@
 
 /* Chat Container - Right Side */
 .chat-container {
-  height: 75vh;
-  min-height: 450px;
+  height: calc(85vh - 60px);
+  min-height: 540px;
   border: none;
   box-shadow: none;
   background: transparent;
@@ -255,8 +256,8 @@
 
 .chat-container .ant-card-body {
   padding: 16px;
-  height: calc(75vh - 120px);
-  min-height: calc(450px - 120px);
+  height: calc(85vh - 180px);
+  min-height: calc(540px - 180px);
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
@@ -309,8 +310,8 @@
 .webcam-container {
   position: relative;
   width: 100%;
-  height: calc(75vh - 200px);
-  min-height: calc(450px - 200px);
+  height: calc(85vh - 280px);
+  min-height: calc(540px - 280px);
   border-radius: 12px;
   overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -605,8 +606,8 @@
   background: white;
   border-radius: 16px;
   margin-bottom: 20px;
-  height: calc(75vh - 300px);
-  min-height: calc(450px - 300px);
+  height: calc(85vh - 380px);
+  min-height: calc(540px - 380px);
   box-shadow: 
     0 4px 20px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -1124,10 +1125,23 @@
   .ai-therapist-modal {
     width: 95vw !important;
     max-width: none !important;
+    top: 3vh !important;
   }
   
   .ai-therapist-container {
-    height: 600px;
+    height: 80vh;
+    min-height: 500px;
+  }
+  
+  .therapy-tab-content {
+    height: calc(80vh - 60px);
+    min-height: 440px;
+  }
+  
+  .camera-container,
+  .chat-container {
+    height: calc(80vh - 60px);
+    min-height: 440px;
   }
   
   .message-content {
@@ -1135,7 +1149,8 @@
   }
   
   .webcam-container {
-    height: 120px;
+    height: calc(80vh - 280px);
+    min-height: calc(440px - 280px);
   }
   
   .analytics-panel {
@@ -1146,11 +1161,23 @@
 @media (max-width: 768px) {
   .ai-therapist-modal {
     width: 98vw !important;
-    top: 10px !important;
+    top: 2vh !important;
   }
   
   .ai-therapist-container {
-    height: 500px;
+    height: 85vh;
+    min-height: 500px;
+  }
+  
+  .therapy-tab-content {
+    height: calc(85vh - 60px);
+    min-height: 440px;
+  }
+  
+  .camera-container,
+  .chat-container {
+    height: calc(85vh - 60px);
+    min-height: 440px;
   }
   
   .message-content {
@@ -1158,7 +1185,8 @@
   }
   
   .webcam-container {
-    height: 100px;
+    height: calc(85vh - 280px);
+    min-height: calc(440px - 280px);
   }
   
   .analytics-panel {

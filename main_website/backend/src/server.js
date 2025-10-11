@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -47,6 +47,7 @@ import appointmentRoutes from './routes/appointmentRoutes.js';
 import adminAppointmentRoutes from './routes/adminAppointmentRoutes.js';
 import meetingRoutes from './routes/meetingRoutes.js';
 import recordingRoutes from './routes/recordingRoutes.js';
+import healthMetricsRoutes from './routes/healthMetrics.js';
 import { summarizeReportWithGemini, testGeminiPrompt } from './services/geminiService.js';
 import WebSocketService from './services/WebSocketService.js';
 import { addMigrationEndpoint } from './utils/migrateJitsiIds.js';
@@ -125,6 +126,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/admin/appointments', adminAppointmentRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/recordings', recordingRoutes);
+app.use('/api/health-metrics', healthMetricsRoutes);
 
 // CORS configuration for file uploads
 app.use('/api/recordings', cors({

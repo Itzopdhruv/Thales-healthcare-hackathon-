@@ -44,6 +44,7 @@ import { Collapse } from 'antd';
 import api from '../services/api';
 import NationalHealthPulse from './NationalHealthPulse';
 import AIAssistant from './AIAssistant';
+import HealthMetricsForm from '../components/HealthMetricsForm';
 import './MedicalHistoryModal.css';
 
 const { Title, Text } = Typography;
@@ -703,35 +704,50 @@ const SimplePatientViewer = () => {
         <Layout>
           {/* Sidebar */}
           <Layout.Sider width={280} style={{ 
-            background: '#fff', 
+            background: 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 100%)', 
             padding: '24px',
             boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
-            borderRight: '1px solid #f0f0f0'
+            borderRight: '1px solid #e8e8e8'
           }}>
             <div style={{ marginBottom: '32px' }}>
-              <Title level={4} style={{ color: '#1890ff', marginBottom: '16px', fontSize: '16px' }}>Navigation</Title>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <Title level={4} style={{ 
+                color: '#667eea', 
+                marginBottom: '16px', 
+                fontSize: '16px',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>Navigation</Title>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div 
                   style={{ 
-                    padding: '14px 16px',
-                    background: activeTab === 'history' ? 'linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)' : '#fff',
-                    borderRadius: '12px',
-                    border: activeTab === 'history' ? '2px solid #1890ff' : '1px solid transparent',
+                    padding: '16px 20px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: '16px',
+                    border: activeTab === 'history' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: activeTab === 'history' ? '0 2px 8px rgba(24, 144, 255, 0.15)' : 'none'
+                    transition: 'all 0.4s ease',
+                    boxShadow: activeTab === 'history' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
-                    if (activeTab !== 'history') {
-                      e.target.style.background = '#f5f5f5';
-                      e.target.style.transform = 'translateX(4px)';
-                    }
+                    e.target.style.transform = 'translateX(6px) scale(1.02)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                    e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                   }}
                   onMouseLeave={(e) => {
-                    if (activeTab !== 'history') {
-                      e.target.style.background = '#fff';
-                      e.target.style.transform = 'translateX(0)';
-                    }
+                    e.target.style.transform = 'translateX(0) scale(1)';
+                    e.target.style.boxShadow = activeTab === 'history' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                    e.target.style.border = activeTab === 'history' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)';
                   }}
                   onClick={() => {
                     setActiveTab('history');
@@ -739,49 +755,131 @@ const SimplePatientViewer = () => {
                   }}
                 >
                   <Text strong style={{ 
-                    color: activeTab === 'history' ? '#1890ff' : '#333', 
-                    fontSize: '14px' 
+                    color: '#ffffff', 
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>📋 Patient History</Text>
                 </div>
                 <div
                   style={{ 
-                    padding: '14px 16px', 
+                    padding: '16px 20px', 
                     cursor: 'pointer',
-                    borderRadius: '12px',
-                    transition: 'all 0.3s ease',
-                    background: '#fff'
+                    borderRadius: '16px',
+                    transition: 'all 0.4s ease',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: activeTab === 'emergency' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: activeTab === 'emergency' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = '#f5f5f5';
-                    e.target.style.transform = 'translateX(4px)';
+                    e.target.style.transform = 'translateX(6px) scale(1.02)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                    e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = '#fff';
-                    e.target.style.transform = 'translateX(0)';
+                    e.target.style.transform = 'translateX(0) scale(1)';
+                    e.target.style.boxShadow = activeTab === 'emergency' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                    e.target.style.border = activeTab === 'emergency' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)';
                   }}
                   onClick={() => setActiveTab('emergency')}
                 >
-                  <Text style={{ fontSize: '14px' }}>🚨 Emergency Mode</Text>
+                  <Text style={{ 
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>🚨 Emergency Mode</Text>
                 </div>
                 <div 
                   style={{ 
-                    padding: '14px 16px', 
+                    padding: '16px 20px', 
                     cursor: 'pointer',
-                    borderRadius: '12px',
-                    transition: 'all 0.3s ease',
-                    background: '#fff'
+                    borderRadius: '16px',
+                    transition: 'all 0.4s ease',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: activeTab === 'ai-assistant' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: activeTab === 'ai-assistant' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = '#f5f5f5';
-                    e.target.style.transform = 'translateX(4px)';
+                    e.target.style.transform = 'translateX(6px) scale(1.02)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                    e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = '#fff';
-                    e.target.style.transform = 'translateX(0)';
+                    e.target.style.transform = 'translateX(0) scale(1)';
+                    e.target.style.boxShadow = activeTab === 'ai-assistant' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                    e.target.style.border = activeTab === 'ai-assistant' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)';
                   }}
                   onClick={() => setActiveTab('ai-assistant')}
                 >
-                  <Text style={{ fontSize: '14px' }}>🧠 AI Assistant</Text>
+                  <Text style={{ 
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>🧠 AI Assistant</Text>
+                </div>
+                <div 
+                  style={{ 
+                    padding: '16px 20px', 
+                    cursor: 'pointer',
+                    borderRadius: '16px',
+                    transition: 'all 0.4s ease',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: activeTab === 'health-metrics' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: activeTab === 'health-metrics' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateX(6px) scale(1.02)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                    e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateX(0) scale(1)';
+                    e.target.style.boxShadow = activeTab === 'health-metrics' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                    e.target.style.border = activeTab === 'health-metrics' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)';
+                  }}
+                  onClick={() => {
+                    setActiveTab('health-metrics');
+                    message.success('Switched to Health Metrics view');
+                  }}
+                >
+                  <Text strong style={{ 
+                    color: '#ffffff', 
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                  }}>❤️ Health Metrics</Text>
                 </div>
                 {/* Removed duplicate 'Reports & Scans' button to avoid two tabs */}
                 {/* <div 
@@ -806,24 +904,33 @@ const SimplePatientViewer = () => {
                 </div> */}
                 <div 
                   style={{ 
-                    padding: '14px 16px', 
+                    padding: '16px 20px', 
                     cursor: 'pointer',
-                    borderRadius: '12px',
-                    transition: 'all 0.3s ease',
-                    background: activeTab === 'prescriptions' ? 'linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)' : '#fff',
-                    border: activeTab === 'prescriptions' ? '2px solid #1890ff' : '1px solid transparent'
+                    borderRadius: '16px',
+                    transition: 'all 0.4s ease',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: activeTab === 'prescriptions' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: activeTab === 'prescriptions' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
-                    if (activeTab !== 'prescriptions') {
-                      e.target.style.background = '#f5f5f5';
-                      e.target.style.transform = 'translateX(4px)';
-                    }
+                    e.target.style.transform = 'translateX(6px) scale(1.02)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                    e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                   }}
                   onMouseLeave={(e) => {
-                    if (activeTab !== 'prescriptions') {
-                      e.target.style.background = '#fff';
-                      e.target.style.transform = 'translateX(0)';
-                    }
+                    e.target.style.transform = 'translateX(0) scale(1)';
+                    e.target.style.boxShadow = activeTab === 'prescriptions' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                    e.target.style.border = activeTab === 'prescriptions' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)';
                   }}
                   onClick={() => {
                     setActiveTab('prescriptions');
@@ -831,32 +938,42 @@ const SimplePatientViewer = () => {
                   }}
                 >
                   <Text style={{ 
-                    fontSize: '14px',
-                    color: activeTab === 'prescriptions' ? '#1890ff' : '#333',
-                    fontWeight: activeTab === 'prescriptions' ? '600' : 'normal'
+                    fontSize: '15px',
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>💊 e-Prescriptions</Text>
                 </div>
 
                 <div 
                   style={{ 
-                    padding: '14px 16px',
+                    padding: '16px 20px',
                     cursor: 'pointer',
-                    borderRadius: '12px',
-                    transition: 'all 0.3s ease',
-                    background: activeTab === 'reports' ? 'linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%)' : '#fff',
-                    border: activeTab === 'reports' ? '2px solid #1890ff' : '1px solid transparent'
+                    borderRadius: '16px',
+                    transition: 'all 0.4s ease',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: activeTab === 'reports' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: activeTab === 'reports' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
-                    if (activeTab !== 'reports') {
-                      e.target.style.background = '#f5f5f5';
-                      e.target.style.transform = 'translateX(4px)';
-                    }
+                    e.target.style.transform = 'translateX(6px) scale(1.02)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                    e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                   }}
                   onMouseLeave={(e) => {
-                    if (activeTab !== 'reports') {
-                      e.target.style.background = '#fff';
-                      e.target.style.transform = 'translateX(0)';
-                    }
+                    e.target.style.transform = 'translateX(0) scale(1)';
+                    e.target.style.boxShadow = activeTab === 'reports' 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                      : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                    e.target.style.border = activeTab === 'reports' 
+                      ? '2px solid rgba(255, 255, 255, 0.5)' 
+                      : '2px solid rgba(255, 255, 255, 0.2)';
                   }}
                   onClick={() => {
                     setActiveTab('reports');
@@ -864,81 +981,131 @@ const SimplePatientViewer = () => {
                   }}
                 >
                   <Text style={{ 
-                    fontSize: '14px',
-                    color: activeTab === 'reports' ? '#1890ff' : '#333',
-                    fontWeight: activeTab === 'reports' ? '600' : 'normal'
+                    fontSize: '15px',
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                   }}>📄 Reports & Scans</Text>
                 </div>
               </div>
             </div>
 
             <div style={{ marginBottom: '32px' }}>
-              <Title level={5} style={{ color: '#666', fontSize: '12px', marginBottom: '12px' }}>SYSTEM TOOLS</Title>
+              <Title level={5} style={{ 
+                color: '#667eea', 
+                fontSize: '12px', 
+                marginBottom: '12px',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>SYSTEM TOOLS</Title>
               <div 
                 style={{ 
-                  padding: '14px 16px', 
+                  padding: '16px 20px', 
                   cursor: 'pointer',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                  background: '#fff'
+                  borderRadius: '16px',
+                  transition: 'all 0.4s ease',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: activeTab === 'nhp' 
+                    ? '2px solid rgba(255, 255, 255, 0.5)' 
+                    : '2px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: activeTab === 'nhp' 
+                    ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                    : '0 4px 15px rgba(102, 126, 234, 0.2)',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#f5f5f5';
-                  e.target.style.transform = 'translateX(4px)';
+                  e.target.style.transform = 'translateX(6px) scale(1.02)';
+                  e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                  e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#fff';
-                  e.target.style.transform = 'translateX(0)';
+                  e.target.style.transform = 'translateX(0) scale(1)';
+                  e.target.style.boxShadow = activeTab === 'nhp' 
+                    ? '0 8px 25px rgba(102, 126, 234, 0.4)' 
+                    : '0 4px 15px rgba(102, 126, 234, 0.2)';
+                  e.target.style.border = activeTab === 'nhp' 
+                    ? '2px solid rgba(255, 255, 255, 0.5)' 
+                    : '2px solid rgba(255, 255, 255, 0.2)';
                 }}
                 onClick={() => setActiveTab('nhp')}
               >
-                <Text style={{ fontSize: '14px' }}>🌐 National Health Pulse</Text>
+                <Text style={{ 
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                }}>🌐 National Health Pulse</Text>
               </div>
             </div>
 
             <div style={{ marginTop: 'auto' }}>
               <div 
                 style={{ 
-                  padding: '14px 16px', 
+                  padding: '16px 20px', 
                   cursor: 'pointer',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                  background: '#fff'
+                  borderRadius: '16px',
+                  transition: 'all 0.4s ease',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.2)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  marginBottom: '8px'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#f5f5f5';
-                  e.target.style.transform = 'translateX(4px)';
+                  e.target.style.transform = 'translateX(6px) scale(1.02)';
+                  e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                  e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#fff';
-                  e.target.style.transform = 'translateX(0)';
+                  e.target.style.transform = 'translateX(0) scale(1)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.2)';
+                  e.target.style.border = '2px solid rgba(255, 255, 255, 0.2)';
                 }}
                 onClick={() => message.info('Switch Patient - Feature coming soon!')}
               >
-                <Text style={{ fontSize: '14px' }}>👥 Switch Patient</Text>
+                <Text style={{ 
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                }}>👥 Switch Patient</Text>
               </div>
               <div 
                 style={{ 
-                  padding: '14px 16px', 
+                  padding: '16px 20px', 
                   cursor: 'pointer',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s ease',
-                  background: '#fff'
+                  borderRadius: '16px',
+                  transition: 'all 0.4s ease',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.2)',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#f5f5f5';
-                  e.target.style.transform = 'translateX(4px)';
+                  e.target.style.transform = 'translateX(6px) scale(1.02)';
+                  e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+                  e.target.style.border = '2px solid rgba(255, 255, 255, 0.5)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#fff';
-                  e.target.style.transform = 'translateX(0)';
+                  e.target.style.transform = 'translateX(0) scale(1)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.2)';
+                  e.target.style.border = '2px solid rgba(255, 255, 255, 0.2)';
                 }}
                 onClick={() => {
                   message.success('Logging out...');
                   navigate('/admin-dashboard');
                 }}
               >
-                <Text style={{ fontSize: '14px' }}>🚪 Logout</Text>
+                <Text style={{ 
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                }}>🚪 Logout</Text>
               </div>
             </div>
           </Layout.Sider>
@@ -1181,6 +1348,7 @@ const SimplePatientViewer = () => {
                                 activeTab === 'prescriptions' ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)' :
                                 activeTab === 'nhp' ? 'linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)' :
                                 activeTab === 'ai-assistant' ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)' :
+                                activeTab === 'health-metrics' ? 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)' :
                                 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
                     borderRadius: '10px',
                     display: 'flex',
@@ -1189,7 +1357,7 @@ const SimplePatientViewer = () => {
                     marginRight: '12px'
                   }}>
                     <Text style={{ color: 'white', fontSize: '18px' }}>
-                      {activeTab === 'history' ? '📋' : activeTab === 'prescriptions' ? '💊' : activeTab === 'nhp' ? '🌐' : activeTab === 'ai-assistant' ? '🤖' : '📄'}
+                      {activeTab === 'history' ? '📋' : activeTab === 'prescriptions' ? '💊' : activeTab === 'nhp' ? '🌐' : activeTab === 'ai-assistant' ? '🤖' : activeTab === 'health-metrics' ? '❤️' : '📄'}
                     </Text>
                   </div>
                   <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
@@ -1197,7 +1365,8 @@ const SimplePatientViewer = () => {
                      activeTab === 'prescriptions' ? 'e-Prescriptions' : 
                      activeTab === 'reports' ? 'Reports & Scans' : 
                      activeTab === 'nhp' ? 'National Health Pulse' : 
-                     activeTab === 'ai-assistant' ? 'AI Assistant Chat' : 'Emergency Mode'}
+                     activeTab === 'ai-assistant' ? 'AI Assistant Chat' : 
+                     activeTab === 'health-metrics' ? 'Health Metrics Management' : 'Emergency Mode'}
                   </Title>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -1418,6 +1587,18 @@ const SimplePatientViewer = () => {
                     <div>
                       {console.log("SimplePatientViewer: Passing patientId (abhaId) to AIAssistant:", patientId)}
                       <AIAssistant patientId={patientId} />
+                    </div>
+                  )}
+
+                  {activeTab === 'health-metrics' && (
+                    <div>
+                      <HealthMetricsForm 
+                        abhaId={patientId}
+                        onMetricsUpdated={(metrics) => {
+                          console.log('Health metrics updated:', metrics);
+                          message.success('Health metrics updated successfully!');
+                        }}
+                      />
                     </div>
                   )}
 

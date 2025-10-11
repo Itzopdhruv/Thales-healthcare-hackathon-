@@ -37,6 +37,11 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
     moodChanges: 0,
     crisisDetected: false
   });
+
+  // Track mood changes
+  useEffect(() => {
+    // Mood state changed - no logging needed
+  }, [currentMood, moodHistory]);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isCrisisMode, setIsCrisisMode] = useState(false);
   const [activeTab, setActiveTab] = useState('therapy');
@@ -345,7 +350,7 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
           
           try {
             console.log('Sending emotion detection request...');
-            const response = await fetch('http://localhost:8001/emotion/detect', {
+            const response = await fetch('http://localhost:8001/detect-emotion', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -360,14 +365,11 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
             
             if (response.ok) {
               const data = await response.json();
-              console.log('🎉 Emotion detection result:', data);
-              console.log('👤 Face detected! Emotion:', data.emotion, 'Confidence:', data.confidence);
               
               // Always update emotion data
               setEmotionData(data);
               
-              // Always call mood update, even if emotion is the same
-              console.log('🔄 Calling updateMoodFromEmotion with:', data.emotion);
+              // Update mood based on detected emotion
               updateMoodFromEmotion(data.emotion);
               
               // Store face detection data for visual feedback
@@ -376,8 +378,6 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
                 confidence: data.confidence,
                 timestamp: Date.now()
               });
-              
-              console.log('✅ Face detection data stored for visual feedback');
             } else {
               console.error('❌ Emotion detection failed:', response.status, response.statusText);
               const errorText = await response.text();
@@ -426,13 +426,10 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
 
   // Update mood based on detected emotion
   const updateMoodFromEmotion = (emotion) => {
-    console.log('🎭 Updating mood from emotion:', emotion);
-    console.log('🎭 Current mood before update:', currentMood);
-    
     const emotionToMood = {
       'Happy': 'happy',
       'Sad': 'sad', 
-      'Angry': 'sad',
+      'Angry': 'angry',
       'Fear': 'sad',
       'Surprise': 'neutral',
       'Disgust': 'sad',
@@ -440,33 +437,25 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
     };
     
     const newMood = emotionToMood[emotion] || 'neutral';
-    console.log('🎭 New mood calculated:', newMood);
-    console.log('🎭 Emotion mapping:', emotion, '->', newMood);
     
-    // Force mood update - always update
-    console.log('🎭 Forcing mood update to:', newMood);
-    setCurrentMood(newMood);
-    setMoodHistory(prev => [...prev, { mood: newMood, timestamp: Date.now() }]);
-    setSessionStats(prev => ({ ...prev, moodChanges: prev.moodChanges + 1 }));
-    console.log('✅ Mood updated successfully!');
-    
-    // Force re-render
-    setEmotionData(prev => ({ ...prev, forceUpdate: Date.now() }));
-    
-    // Also update the current emotions in the backend
-    console.log('🔄 Updating backend mood for session:', sessionId);
-    fetch('http://localhost:8001/update-mood', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        session_id: sessionId,
-        mood: newMood
-      })
-    }).then(response => response.json())
-      .then(data => console.log('✅ Backend mood updated:', data))
-      .catch(err => console.log('❌ Backend mood update failed:', err));
+    // Only update if mood actually changed
+    if (currentMood !== newMood) {
+      setCurrentMood(newMood);
+      setMoodHistory(prev => [...prev, { mood: newMood, timestamp: Date.now() }]);
+      setSessionStats(prev => ({ ...prev, moodChanges: prev.moodChanges + 1 }));
+      
+      // Update backend
+      fetch('http://localhost:8001/update-mood', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          mood: newMood
+        })
+      }).catch(err => console.log('Backend mood update failed:', err));
+    }
   };
 
   // Send message to AI Therapist
@@ -487,21 +476,10 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
     try {
       const chatData = {
         message: inputMessage,
-        session_id: sessionId,
-        patient_context: {
-          patient_id: patientData?.id || 'anonymous',
-          mood: currentMood,
-          emotion_data: emotionData,
-          session_data: {
-            duration: Date.now() - sessionStartTime.current,
-            message_count: messages.length + 1,
-            mood_history: moodHistory
-          }
-        }
+        session_id: sessionId
       };
       
-      console.log('💬 Sending chat message with mood:', currentMood);
-      console.log('💬 Chat data:', chatData);
+      console.log('💬 Sending chat message:', chatData);
       
       const response = await fetch('http://localhost:8001/chat', {
         method: 'POST',
@@ -519,18 +497,11 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
           text: data.response,
           sender: 'ai',
           timestamp: new Date().toISOString(),
-          mood: data.mood || currentMood,
-          crisis_detected: data.crisis_detected || false
+          mood: currentMood,
+          crisis_detected: false
         };
 
         setMessages(prev => [...prev, aiMessage]);
-        
-        // Check for crisis detection
-        if (data.crisis_detected) {
-          setIsCrisisMode(true);
-          setSessionStats(prev => ({ ...prev, crisisDetected: true }));
-          message.warning('Crisis detected! Please seek immediate professional help.');
-        }
         
         // Update session progress
         setSessionProgress(prev => Math.min(prev + 2, 100));
@@ -711,26 +682,26 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
                           style={{ display: 'none' }}
                         />
                         {/* Face Detection Overlay */}
-        {isWebcamActive && faceDetectionData && (
-          <div className="face-detection-overlay">
-            <div className="face-box">
-              <div className="face-box-border"></div>
-              <div className="emotion-label">
-                {faceDetectionData.emotion}
-                <span className="confidence">
-                  ({Math.round(faceDetectionData.confidence * 100)}%)
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-        {isWebcamActive && !faceDetectionData && (
-          <div className="face-detection-overlay">
-            <div className="no-face-message">
-              <div className="no-face-text">Looking for face...</div>
-            </div>
-          </div>
-        )}
+                        {isWebcamActive && faceDetectionData && (
+                          <div className="face-detection-overlay">
+                            <div className="face-box">
+                              <div className="face-box-border"></div>
+                              <div className="emotion-label">
+                                {faceDetectionData.emotion}
+                                <span className="confidence">
+                                  ({Math.round(faceDetectionData.confidence * 100)}%)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {isWebcamActive && !faceDetectionData && (
+                          <div className="face-detection-overlay">
+                            <div className="no-face-message">
+                              <div className="no-face-text">Looking for face...</div>
+                            </div>
+                          </div>
+                        )}
                         {!isWebcamActive && (
                           <div className="webcam-placeholder">
                             <CameraOutlined />
@@ -776,6 +747,7 @@ const AITherapist = ({ isVisible, onClose, patientData }) => {
                           </span>
                         )}
                       </div>
+                      
                     </div>
                   </Card>
                 </Col>

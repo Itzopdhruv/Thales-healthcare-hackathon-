@@ -38,6 +38,7 @@ import {
 import './AdminPatientView.css';
 import { useSearchParams } from 'react-router-dom';
 import { patientAPI } from '../services/api';
+import HealthMetricsForm from '../components/HealthMetricsForm';
 
 const { Header, Content, Sider } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -47,6 +48,7 @@ const AdminPatientView = () => {
   const [form] = Form.useForm();
   const [searchParams] = useSearchParams();
   const [patientData, setPatientData] = useState(null);
+  const [activeTab, setActiveTab] = useState('history');
 
   // Load patient by ABHA ID from query param: ?abhaId=XX-XX-XX-XX
   useEffect(() => {
@@ -130,50 +132,65 @@ const AdminPatientView = () => {
             
             <div className="sider-menu">
               <Button 
-                type="primary"
+                type={activeTab === 'history' ? 'primary' : 'text'}
                 block
-                className="menu-item active"
+                className={`menu-item ${activeTab === 'history' ? 'active' : ''}`}
                 icon={<ClockCircleOutlined />}
+                onClick={() => setActiveTab('history')}
               >
                 Patient History
               </Button>
               <Button 
-                type="text"
+                type={activeTab === 'emergency' ? 'primary' : 'text'}
                 block
-                className="menu-item"
+                className={`menu-item ${activeTab === 'emergency' ? 'active' : ''}`}
                 icon={<ExclamationCircleOutlined />}
+                onClick={() => setActiveTab('emergency')}
               >
                 Emergency Mode
               </Button>
               <Button 
-                type="text"
+                type={activeTab === 'ai-assistant' ? 'primary' : 'text'}
                 block
-                className="menu-item"
+                className={`menu-item ${activeTab === 'ai-assistant' ? 'active' : ''}`}
                 icon={<RobotOutlined />}
+                onClick={() => setActiveTab('ai-assistant')}
               >
                 AI Assistant
               </Button>
               <Button 
-                type="text"
+                type={activeTab === 'health-metrics' ? 'primary' : 'text'}
                 block
-                className="menu-item"
+                className={`menu-item ${activeTab === 'health-metrics' ? 'active' : ''}`}
+                icon={<HeartOutlined />}
+                onClick={() => setActiveTab('health-metrics')}
+              >
+                Health Metrics
+              </Button>
+              <Button 
+                type={activeTab === 'reports' ? 'primary' : 'text'}
+                block
+                className={`menu-item ${activeTab === 'reports' ? 'active' : ''}`}
                 icon={<FileTextOutlined />}
+                onClick={() => setActiveTab('reports')}
               >
                 Reports & Scans
               </Button>
               <Button 
-                type="text"
+                type={activeTab === 'prescriptions' ? 'primary' : 'text'}
                 block
-                className="menu-item"
+                className={`menu-item ${activeTab === 'prescriptions' ? 'active' : ''}`}
                 icon={<MedicineBoxOutlined />}
+                onClick={() => setActiveTab('prescriptions')}
               >
                 e-Prescriptions
               </Button>
               <Button 
-                type="text"
+                type={activeTab === 'health-pulse' ? 'primary' : 'text'}
                 block
-                className="menu-item"
+                className={`menu-item ${activeTab === 'health-pulse' ? 'active' : ''}`}
                 icon={<GlobalOutlined />}
+                onClick={() => setActiveTab('health-pulse')}
               >
                 National Health Pulse
               </Button>
@@ -299,6 +316,59 @@ const AdminPatientView = () => {
               </Timeline>
             </Card>
           </div>
+
+          {/* Tab Content Rendering */}
+          {activeTab === 'health-metrics' && patientData?.abhaId && (
+            <div style={{ marginTop: '24px' }}>
+              <HealthMetricsForm 
+                abhaId={patientData.abhaId}
+                onMetricsUpdated={(metrics) => {
+                  console.log('Health metrics updated:', metrics);
+                  message.success('Health metrics updated successfully!');
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'ai-assistant' && (
+            <div style={{ marginTop: '24px' }}>
+              <Card title="AI Assistant" className="ai-assistant-card">
+                <Text>AI Assistant functionality will be implemented here.</Text>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'emergency' && (
+            <div style={{ marginTop: '24px' }}>
+              <Card title="Emergency Mode" className="emergency-card">
+                <Text>Emergency mode functionality will be implemented here.</Text>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'reports' && (
+            <div style={{ marginTop: '24px' }}>
+              <Card title="Reports & Scans" className="reports-card">
+                <Text>Reports & Scans functionality will be implemented here.</Text>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'prescriptions' && (
+            <div style={{ marginTop: '24px' }}>
+              <Card title="e-Prescriptions" className="prescriptions-card">
+                <Text>e-Prescriptions functionality will be implemented here.</Text>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'health-pulse' && (
+            <div style={{ marginTop: '24px' }}>
+              <Card title="National Health Pulse" className="health-pulse-card">
+                <Text>National Health Pulse functionality will be implemented here.</Text>
+              </Card>
+            </div>
+          )}
         </Content>
       </Layout>
 

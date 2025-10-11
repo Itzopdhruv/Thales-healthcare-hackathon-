@@ -52,6 +52,8 @@ const PatientDashboard = () => {
   const [reloadTick, setReloadTick] = useState(0);
   const [showAIDoctor, setShowAIDoctor] = useState(false);
   const [aiDoctorReady, setAiDoctorReady] = useState(false);
+  const [healthMetrics, setHealthMetrics] = useState([]);
+  const [loadingHealthMetrics, setLoadingHealthMetrics] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -103,7 +105,8 @@ const PatientDashboard = () => {
     { date: '2025-01-25', time: '2:30 PM', doctor: 'Dr. Priya Sharma', specialty: 'Dermatology' }
   ];
 
-  const healthMetrics = [
+  // Default health metrics (fallback)
+  const defaultHealthMetrics = [
     { name: 'Blood Pressure', value: '120/80', status: 'Normal', color: '#52c41a' },
     { name: 'Heart Rate', value: '72 bpm', status: 'Normal', color: '#52c41a' },
     { name: 'Blood Sugar', value: '95 mg/dL', status: 'Normal', color: '#52c41a' },
@@ -150,11 +153,73 @@ const PatientDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Normal': return '#52c41a';
-      case 'Stable': return '#1890ff';
-      case 'Warning': return '#faad14';
-      case 'Critical': return '#ff4d4f';
-      default: return '#d9d9d9';
+      case 'Normal':
+      case 'Stable':
+        return '#52c41a';
+      case 'High':
+      case 'Pre-High':
+      case 'Tachycardia':
+      case 'Pre-Diabetic':
+      case 'Overweight':
+        return '#faad14';
+      case 'Low':
+      case 'Bradycardia':
+      case 'Underweight':
+        return '#1890ff';
+      case 'Diabetic':
+      case 'Obese':
+        return '#ff4d4f';
+      default:
+        return '#d9d9d9';
+    }
+  };
+
+  // Load health metrics from API
+  const loadHealthMetrics = async () => {
+    if (!user?.abhaId) return;
+    
+    setLoadingHealthMetrics(true);
+    try {
+      const response = await api.get(`/health-metrics/latest/${user.abhaId}`);
+      if (response.data.success) {
+        const metrics = response.data.data.healthMetrics;
+        const formattedMetrics = [
+          {
+            name: 'Blood Pressure',
+            value: metrics.bloodPressure.value,
+            status: metrics.bloodPressure.status,
+            color: getStatusColor(metrics.bloodPressure.status)
+          },
+          {
+            name: 'Heart Rate',
+            value: metrics.heartRate.value,
+            status: metrics.heartRate.status,
+            color: getStatusColor(metrics.heartRate.status)
+          },
+          {
+            name: 'Blood Sugar',
+            value: metrics.bloodSugar.value,
+            status: metrics.bloodSugar.status,
+            color: getStatusColor(metrics.bloodSugar.status)
+          },
+          {
+            name: 'Weight',
+            value: metrics.weight.value,
+            status: metrics.weight.status,
+            color: getStatusColor(metrics.weight.status)
+          }
+        ];
+        setHealthMetrics(formattedMetrics);
+      } else {
+        // Use default metrics if no data found
+        setHealthMetrics(defaultHealthMetrics);
+      }
+    } catch (error) {
+      console.error('Error loading health metrics:', error);
+      // Use default metrics on error
+      setHealthMetrics(defaultHealthMetrics);
+    } finally {
+      setLoadingHealthMetrics(false);
     }
   };
 
@@ -365,6 +430,11 @@ const PatientDashboard = () => {
     };
     loadDemo();
   }, [user?.abhaId]);
+
+  // Load health metrics
+  useEffect(() => {
+    loadHealthMetrics();
+  }, [user?.abhaId, reloadTick]);
 
   // Check AI Doctor service availability
   useEffect(() => {
@@ -637,29 +707,36 @@ const PatientDashboard = () => {
                 <Row gutter={[24, 24]} className="slide-up">
                   <Col xs={24} lg={12}>
                     <Card title="Health Metrics" className="metrics-card">
-                      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                        {healthMetrics.map((metric, index) => (
-                          <div key={index} className="metric-item">
-                            <div className="metric-header">
-                              <Text strong>{metric.name}</Text>
-                              <Tag color={getStatusColor(metric.status)}>
-                                {metric.status}
-                              </Tag>
+                      {loadingHealthMetrics ? (
+                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                          <Spin size="large" />
+                          <div style={{ marginTop: '16px' }}>Loading health metrics...</div>
+                        </div>
+                      ) : (
+                        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                          {healthMetrics.map((metric, index) => (
+                            <div key={index} className="metric-item">
+                              <div className="metric-header">
+                                <Text strong>{metric.name}</Text>
+                                <Tag color={getStatusColor(metric.status)}>
+                                  {metric.status}
+                                </Tag>
+                              </div>
+                              <div className="metric-value">
+                                <Text style={{ fontSize: '18px', color: metric.color }}>
+                                  {metric.value}
+                                </Text>
+                              </div>
+                              <Progress 
+                                percent={85} 
+                                showInfo={false} 
+                                strokeColor={metric.color}
+                                size="small"
+                              />
                             </div>
-                            <div className="metric-value">
-                              <Text style={{ fontSize: '18px', color: metric.color }}>
-                                {metric.value}
-                              </Text>
-                            </div>
-                            <Progress 
-                              percent={85} 
-                              showInfo={false} 
-                              strokeColor={metric.color}
-                              size="small"
-                            />
-                          </div>
-                        ))}
-                      </Space>
+                          ))}
+                        </Space>
+                      )}
                     </Card>
                   </Col>
 
@@ -866,6 +943,7 @@ const PatientDashboard = () => {
                 </Row>
               </Card>
             )}
+
           </div>
         </Content>
       </Layout>

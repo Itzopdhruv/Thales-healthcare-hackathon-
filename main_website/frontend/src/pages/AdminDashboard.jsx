@@ -283,9 +283,8 @@ const AdminDashboard = () => {
         setPatientFound(patientData);
         setIsPatientLookupVisible(false);
         
-        // Navigate to secure patient viewer with ABHA ID
-        navigate(`/patient/${values.abhaNumber}`);
-        message.success('Patient found! Opening secure patient viewer...');
+        // Don't navigate away - stay on admin dashboard to show health metrics button
+        message.success('Patient found! You can now manage health metrics or view complete history.');
       } else {
         message.error(result.error || 'Patient not found with this ABHA number');
       }
@@ -1014,9 +1013,12 @@ const AdminDashboard = () => {
       <Modal
         title="Patient Found:"
         open={patientFound && !isConsentVisible}
-        onCancel={() => setPatientFound(null)}
+        onCancel={() => {
+          setPatientFound(null);
+        }}
         footer={null}
         className="patient-found-modal"
+        width={800}
       >
         <div className="patient-found-content">
           <div className="patient-info">
@@ -1031,12 +1033,14 @@ const AdminDashboard = () => {
               icon={<CalendarOutlined />}
               className="medical-history-button"
               onClick={() => {
-                setPatientFound(null);
                 navigate(`/patient/${patientFound?.abhaId}`);
               }}
             >
-              Get Complete Medical History
+              View Complete Medical History
             </Button>
+            
+            
+            
             <Button
               type="primary"
               danger
@@ -1044,25 +1048,36 @@ const AdminDashboard = () => {
               icon={<MedicineBoxOutlined />}
               className="emergency-button"
               onClick={() => {
-                setPatientFound(null);
                 navigate(`/patient/${patientFound?.abhaId}`);
               }}
             >
-              Quick Details (Emergency Mode)
+              Emergency Mode
             </Button>
           </Space>
 
-          <Button
-            type="link"
-            block
-            onClick={() => {
-              setPatientFound(null);
-              setIsPatientLookupVisible(true);
-            }}
-            className="lookup-another-link"
-          >
-            Look up another patient
-          </Button>
+
+            <Button
+              type="link"
+              block
+              onClick={() => {
+                setPatientFound(null);
+                setIsPatientLookupVisible(true);
+              }}
+              className="lookup-another-link"
+            >
+              Look up another patient
+            </Button>
+            
+            <Button
+              type="default"
+              block
+              onClick={() => {
+                setPatientFound(null);
+              }}
+              style={{ marginTop: '8px' }}
+            >
+              Close Modal
+            </Button>
         </div>
       </Modal>
 
