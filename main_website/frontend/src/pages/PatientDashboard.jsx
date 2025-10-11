@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { patientAPI } from '../services/api';
 import AIDoctorChatbot from '../components/AIDoctorChatbot';
 import PatientAppointmentBooking from '../components/PatientAppointmentBooking';
+import AITherapist from '../components/AITherapist';
 import { 
   Layout, 
   Card, 
@@ -35,7 +36,8 @@ import {
   BellOutlined,
   SettingOutlined,
   RobotOutlined,
-  CameraOutlined
+  CameraOutlined,
+  BulbOutlined
 } from '@ant-design/icons';
 import './PatientDashboard.css';
 
@@ -94,6 +96,7 @@ const PatientDashboard = () => {
   // Profile image state
   const [profileImage, setProfileImage] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [showAITherapist, setShowAITherapist] = useState(false);
 
   const upcomingAppointments = [
     { date: '2025-01-20', time: '10:00 AM', doctor: 'Dr. Rajesh Kumar', specialty: 'Cardiology' },
@@ -510,6 +513,17 @@ const PatientDashboard = () => {
                 <span className="menu-text">Medications</span>
                 <div className="menu-indicator"></div>
               </div>
+              
+              <div 
+                className="menu-item ai-therapist-item"
+                onClick={() => setShowAITherapist(true)}
+              >
+                <div className="menu-icon">
+                  <BulbOutlined />
+                </div>
+                <span className="menu-text">AI Therapist</span>
+                <div className="menu-indicator"></div>
+              </div>
             </div>
             
             {/* Emergency Button */}
@@ -878,6 +892,13 @@ const PatientDashboard = () => {
       <AIDoctorChatbot 
         isVisible={showAIDoctor} 
         onClose={() => setShowAIDoctor(false)} 
+      />
+      
+      {/* AI Therapist Modal */}
+      <AITherapist 
+        isVisible={showAITherapist}
+        onClose={() => setShowAITherapist(false)}
+        patientData={user}
       />
     </Layout>
   );
