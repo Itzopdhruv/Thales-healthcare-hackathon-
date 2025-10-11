@@ -80,7 +80,7 @@ const SimplePatientViewer = () => {
   ]);
   
   // Data states
-  const [patient, setPatient] = useState(null);
+  const [patient, setPatient] = useState({ age: 'N/A', gender: 'N/A', bloodType: 'N/A' });
   const [medicalHistory, setMedicalHistory] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
   const [reports, setReports] = useState([]);
