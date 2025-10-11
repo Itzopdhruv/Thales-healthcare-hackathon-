@@ -470,25 +470,59 @@ const SimplePatientViewer = () => {
 
   const handleViewReport = (reportId) => {
     try {
-      // Open in new tab (backend will verify auth via cookie/session)
       const token = localStorage.getItem('token');
-      // Backend runs on 5001 now; use direct URL to bypass proxy for new tab
-      const viewUrl = `http://localhost:5001/api/reports/${reportId}/view?token=${token}`;
+      if (!token) {
+        message.error('Please log in to view reports');
+        navigate('/login');
+        return;
+      }
       
-      window.open(viewUrl, '_blank');
+      console.log('🔍 Viewing report:', reportId);
+      console.log('🔑 Using token:', token ? `${token.substring(0, 20)}...` : 'No token');
+      
+      // Use the proxy URL instead of direct backend URL
+      const viewUrl = `/api/reports/${reportId}/view`;
+      
+      // Create a form to submit with token
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = viewUrl;
+      form.target = '_blank';
+      
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = token;
+      form.appendChild(tokenInput);
+      
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
       
       message.success('Opening report in new tab...');
     } catch (error) {
       console.error('Error viewing report:', error);
-      message.error('Failed to view report');
+      message.error('Failed to view report. Please check your login status.');
     }
   };
 
   const handleDownloadReport = async (reportId) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Please log in to download reports');
+        navigate('/login');
+        return;
+      }
+      
+      console.log('📥 Downloading report:', reportId);
+      console.log('🔑 Using token:', token ? `${token.substring(0, 20)}...` : 'No token');
+      
       const response = await api.get(`/reports/${reportId}/download`, {
         responseType: 'blob'
       });
+      
+      console.log('📥 Download response:', response.status, response.headers);
       
       // Get filename from content-disposition header or use default
       const contentDisposition = response.headers['content-disposition'];
@@ -512,14 +546,43 @@ const SimplePatientViewer = () => {
       
       message.success('Report downloaded successfully!');
     } catch (error) {
-      console.error('Error downloading report:', error);
-      message.error('Failed to download report');
+      console.error('❌ Error downloading report:', error);
+      console.error('❌ Error response:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        message.error('Please log in again to download reports');
+        navigate('/login');
+      } else if (error.response?.status === 404) {
+        message.error('Report not found or file missing');
+      } else if (error.response?.status === 403) {
+        message.error('You do not have permission to download this report');
+      } else {
+        message.error('Failed to download report. Please try again.');
+      }
     }
   };
 
   const handleDeleteReport = async (reportId) => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        message.error('Please log in to delete reports');
+        navigate('/login');
+        return;
+      }
+      
+      console.log('🗑️ Deleting report:', reportId);
+      console.log('🔑 Using token:', token ? `${token.substring(0, 20)}...` : 'No token');
+      
+      // Show confirmation dialog
+      const confirmed = window.confirm('Are you sure you want to delete this report? This action cannot be undone.');
+      if (!confirmed) {
+        return;
+      }
+      
       const response = await api.delete(`/reports/${reportId}`);
+      
+      console.log('🗑️ Delete response:', response.data);
       
       if (response.data.success) {
         message.success('Report deleted successfully!');
@@ -528,8 +591,19 @@ const SimplePatientViewer = () => {
         message.error(response.data.message || 'Failed to delete report');
       }
     } catch (error) {
-      console.error('Error deleting report:', error);
-      message.error('Failed to delete report');
+      console.error('❌ Error deleting report:', error);
+      console.error('❌ Error response:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        message.error('Please log in again to delete reports');
+        navigate('/login');
+      } else if (error.response?.status === 404) {
+        message.error('Report not found');
+      } else if (error.response?.status === 403) {
+        message.error('You do not have permission to delete this report');
+      } else {
+        message.error('Failed to delete report. Please try again.');
+      }
     }
   };
 

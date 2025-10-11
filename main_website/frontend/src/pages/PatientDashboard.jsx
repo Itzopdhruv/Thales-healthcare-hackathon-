@@ -630,7 +630,7 @@ const PatientDashboard = () => {
                       boxShadow: '0 10px 30px rgba(82,196,26,0.12)'
                     }}>
                       <Typography.Text style={{ color: '#389e0d' }}>AGE</Typography.Text>
-                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{String(demographics.age || 'N/A')}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{demographics?.age || 'N/A'}</div>
                     </Card>
                   </Col>
                   <Col xs={24} sm={12} lg={6}>
@@ -641,7 +641,7 @@ const PatientDashboard = () => {
                       boxShadow: '0 10px 30px rgba(82,196,26,0.12)'
                     }}>
                       <Typography.Text style={{ color: '#389e0d' }}>GENDER</Typography.Text>
-                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{String(demographics.gender || 'N/A').toUpperCase()}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8, color: '#52c41a' }}>{(demographics?.gender || 'N/A').toUpperCase()}</div>
                     </Card>
                   </Col>
                   <Col xs={24} sm={12} lg={6}>

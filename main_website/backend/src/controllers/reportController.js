@@ -343,16 +343,38 @@ export const viewReport = async (req, res) => {
       });
     }
 
-    // Allow admin/doctor bypass
-    if (!(req.user?.role === 'admin' || req.user?.role === 'doctor') && !report.canAccess(userId)) {
+    // Check access permissions
+    let hasAccess = false;
+    
+    // Admin/doctor bypass
+    if (req.user?.role === 'admin' || req.user?.role === 'doctor') {
+      hasAccess = true;
+    } else if (req.auth?.type === 'patient') {
+      // For patient tokens, check by ABHA ID
+      const patientAbhaId = req.patient?.abhaId;
+      if (patientAbhaId) {
+        hasAccess = report.canAccessByAbhaId(patientAbhaId);
+      }
+    } else {
+      // For regular user tokens, check by user ID
+      hasAccess = report.canAccess(userId);
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this report'
       });
     }
 
+    // Reconstruct file path if missing
+    let filePath = report.filePath;
+    if (!filePath && report.fileName) {
+      filePath = path.join(process.cwd(), 'src', 'uploads', 'reports', report.fileName);
+    }
+
     // Check if file exists
-    if (!fs.existsSync(report.filePath)) {
+    if (!filePath || !fs.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         message: 'File not found on server'
@@ -360,12 +382,19 @@ export const viewReport = async (req, res) => {
     }
 
     // Set appropriate headers for viewing in browser (inline)
-    res.setHeader('Content-Type', report.mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${report.originalFileName}"`);
-    res.setHeader('Content-Length', report.fileSize);
+    res.setHeader('Content-Type', report.mimeType || 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${report.originalFileName || 'report.pdf'}"`);
+    
+    // Get file size if not stored
+    let fileSize = report.fileSize;
+    if (!fileSize) {
+      const stats = fs.statSync(filePath);
+      fileSize = stats.size;
+    }
+    res.setHeader('Content-Length', fileSize);
 
     // Stream the file
-    const fileStream = fs.createReadStream(report.filePath);
+    const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
 
   } catch (error) {
@@ -396,16 +425,38 @@ export const downloadReport = async (req, res) => {
       });
     }
 
-    // Allow admin/doctor bypass
-    if (!(req.user?.role === 'admin' || req.user?.role === 'doctor') && !report.canAccess(userId)) {
+    // Check access permissions
+    let hasAccess = false;
+    
+    // Admin/doctor bypass
+    if (req.user?.role === 'admin' || req.user?.role === 'doctor') {
+      hasAccess = true;
+    } else if (req.auth?.type === 'patient') {
+      // For patient tokens, check by ABHA ID
+      const patientAbhaId = req.patient?.abhaId;
+      if (patientAbhaId) {
+        hasAccess = report.canAccessByAbhaId(patientAbhaId);
+      }
+    } else {
+      // For regular user tokens, check by user ID
+      hasAccess = report.canAccess(userId);
+    }
+
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'Access denied to this report'
       });
     }
 
+    // Reconstruct file path if missing
+    let filePath = report.filePath;
+    if (!filePath && report.fileName) {
+      filePath = path.join(process.cwd(), 'src', 'uploads', 'reports', report.fileName);
+    }
+
     // Check if file exists
-    if (!fs.existsSync(report.filePath)) {
+    if (!filePath || !fs.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
         message: 'File not found on server'
@@ -413,12 +464,19 @@ export const downloadReport = async (req, res) => {
     }
 
     // Set appropriate headers
-    res.setHeader('Content-Type', report.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${report.originalFileName}"`);
-    res.setHeader('Content-Length', report.fileSize);
+    res.setHeader('Content-Type', report.mimeType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${report.originalFileName || 'report.pdf'}"`);
+    
+    // Get file size if not stored
+    let fileSize = report.fileSize;
+    if (!fileSize) {
+      const stats = fs.statSync(filePath);
+      fileSize = stats.size;
+    }
+    res.setHeader('Content-Length', fileSize);
 
     // Stream the file
-    const fileStream = fs.createReadStream(report.filePath);
+    const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
 
   } catch (error) {

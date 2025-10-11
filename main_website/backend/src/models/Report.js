@@ -253,17 +253,38 @@ ReportSchema.methods.getFormattedFileSize = function() {
 
 // Method to check if user can access this report
 ReportSchema.methods.canAccess = function(userId) {
-  // Owner can always access
-  if (this.uploadedBy.toString() === userId.toString()) return true;
+  if (!userId) return false;
   
-  // The patient whose report this is can access
+  // Owner can always access
+  if (this.uploadedBy && this.uploadedBy.toString() === userId.toString()) return true;
+  
+  // The patient whose report this is can access (by patientId)
   if (this.patientId && this.patientId.toString() === userId.toString()) return true;
   
+  // If uploadedBy is null but we have a patientId, allow access if user is the patient
+  // This handles cases where reports were uploaded without proper authentication
+  if (!this.uploadedBy && this.patientId && this.patientId.toString() === userId.toString()) return true;
+  
   // Check if shared with user
-  const sharedWithUser = this.sharedWith.find(share => 
-    share.userId.toString() === userId.toString()
-  );
-  if (sharedWithUser) return true;
+  if (this.sharedWith && Array.isArray(this.sharedWith)) {
+    const sharedWithUser = this.sharedWith.find(share => 
+      share.userId && share.userId.toString() === userId.toString()
+    );
+    if (sharedWithUser) return true;
+  }
+  
+  // Public reports can be accessed by anyone
+  if (this.visibility === 'public') return true;
+  
+  return false;
+};
+
+// Method to check if user can access this report by ABHA ID (for patient tokens)
+ReportSchema.methods.canAccessByAbhaId = function(abhaId) {
+  if (!abhaId) return false;
+  
+  // If the report's ABHA ID matches the user's ABHA ID, allow access
+  if (this.abhaId === abhaId) return true;
   
   // Public reports can be accessed by anyone
   if (this.visibility === 'public') return true;

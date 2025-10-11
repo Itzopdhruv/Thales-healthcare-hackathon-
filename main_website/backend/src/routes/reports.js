@@ -48,6 +48,7 @@ const authenticateTokenOrQuery = async (req, res, next) => {
       }
       req.patientId = patient._id;
       req.patient = patient;
+      req.auth = { type: 'patient', id: patient._id };
     } else {
       const user = await User.findById(decoded.userId);
       if (!user) {
@@ -58,6 +59,7 @@ const authenticateTokenOrQuery = async (req, res, next) => {
       }
       req.userId = user._id;
       req.user = user;
+      req.auth = { type: 'user', id: user._id, role: user.role };
     }
     next();
 
