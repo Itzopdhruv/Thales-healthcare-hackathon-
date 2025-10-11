@@ -13,7 +13,6 @@ import {
   Modal,
   Form,
   Input,
-  Select,
   DatePicker,
   message
 } from 'antd';
@@ -392,12 +391,23 @@ const AdminPatientView = () => {
             label="Entry Type"
             rules={[{ required: true, message: 'Please select entry type!' }]}
           >
-            <Select placeholder="Select entry type">
-              <Select.Option value="prescription">e-Prescription</Select.Option>
-              <Select.Option value="consultation">Consultation</Select.Option>
-              <Select.Option value="test">Test Result</Select.Option>
-              <Select.Option value="procedure">Procedure</Select.Option>
-            </Select>
+            <select 
+              style={{ 
+                width: '100%', 
+                padding: '8px 12px', 
+                border: '1px solid #d9d9d9', 
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>Select entry type</option>
+              <option value="prescription">e-Prescription</option>
+              <option value="consultation">Consultation</option>
+              <option value="test">Test Result</option>
+              <option value="procedure">Procedure</option>
+            </select>
           </Form.Item>
 
           <Form.Item

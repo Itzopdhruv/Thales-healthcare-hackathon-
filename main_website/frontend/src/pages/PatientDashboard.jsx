@@ -176,35 +176,41 @@ const PatientDashboard = () => {
 
   // Load health metrics from API
   const loadHealthMetrics = async () => {
-    if (!user?.abhaId) return;
+    if (!user?.abhaId) {
+      console.log('❌ No ABHA ID found for user:', user);
+      return;
+    }
     
+    console.log('🔄 Loading health metrics for ABHA ID:', user.abhaId);
     setLoadingHealthMetrics(true);
     try {
       const response = await api.get(`/health-metrics/latest/${user.abhaId}`);
+      console.log('📊 Health metrics API response:', response.data);
       if (response.data.success) {
         const metrics = response.data.data.healthMetrics;
+        console.log('📈 Raw health metrics data:', metrics);
         const formattedMetrics = [
           {
             name: 'Blood Pressure',
-            value: metrics.bloodPressure.value,
+            value: `${metrics.bloodPressure.systolic}/${metrics.bloodPressure.diastolic}`,
             status: metrics.bloodPressure.status,
             color: getStatusColor(metrics.bloodPressure.status)
           },
           {
             name: 'Heart Rate',
-            value: metrics.heartRate.value,
+            value: `${metrics.heartRate.bpm} bpm`,
             status: metrics.heartRate.status,
             color: getStatusColor(metrics.heartRate.status)
           },
           {
             name: 'Blood Sugar',
-            value: metrics.bloodSugar.value,
+            value: `${metrics.bloodSugar.mgdL} mg/dL`,
             status: metrics.bloodSugar.status,
             color: getStatusColor(metrics.bloodSugar.status)
           },
           {
             name: 'Weight',
-            value: metrics.weight.value,
+            value: `${metrics.weight.kg} kg`,
             status: metrics.weight.status,
             color: getStatusColor(metrics.weight.status)
           }
@@ -215,7 +221,8 @@ const PatientDashboard = () => {
         setHealthMetrics(defaultHealthMetrics);
       }
     } catch (error) {
-      console.error('Error loading health metrics:', error);
+      console.error('❌ Error loading health metrics:', error);
+      console.error('❌ Error details:', error.response?.data);
       // Use default metrics on error
       setHealthMetrics(defaultHealthMetrics);
     } finally {

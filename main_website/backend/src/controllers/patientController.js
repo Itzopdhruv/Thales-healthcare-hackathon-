@@ -218,3 +218,165 @@ export const lookupPatient = async (req, res) => {
     });
   }
 };
+
+// Generate ABHA ID
+export const generateABHAId = async (req, res) => {
+  try {
+    console.log('Generating new ABHA ID...');
+    
+    // Generate a random ABHA ID in the format XX-XX-XX-XX
+    const generateRandomABHA = () => {
+      const part1 = Math.floor(Math.random() * 90) + 10; // 10-99
+      const part2 = Math.floor(Math.random() * 90) + 10; // 10-99
+      const part3 = Math.floor(Math.random() * 90) + 10; // 10-99
+      const part4 = Math.floor(Math.random() * 90) + 10; // 10-99
+      return `${part1}-${part2}-${part3}-${part4}`;
+    };
+
+    let abhaId;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    // Keep generating until we find a unique ABHA ID
+    while (!isUnique && attempts < maxAttempts) {
+      abhaId = generateRandomABHA();
+      
+      // Check if this ABHA ID already exists in Patient collection
+      const existingPatient = await Patient.findOne({ abhaId });
+      
+      // Also check in legacy User collection
+      const existingUser = await User.findOne({ abhaId, role: 'patient' });
+      
+      if (!existingPatient && !existingUser) {
+        isUnique = true;
+      }
+      
+      attempts++;
+    }
+
+    if (!isUnique) {
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to generate unique ABHA ID after multiple attempts'
+      });
+    }
+
+    console.log('Generated unique ABHA ID:', abhaId);
+
+    res.status(200).json({
+      success: true,
+      message: 'ABHA ID generated successfully',
+      data: {
+        abhaId: abhaId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error generating ABHA ID:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating ABHA ID',
+      error: error.message
+    });
+  }
+};
+
+// Create patient with ABHA ID
+export const createPatientWithABHA = async (req, res) => {
+  try {
+    console.log('Creating patient with ABHA ID...');
+    console.log('Request body:', req.body);
+
+    const {
+      abhaId,
+      fullName,
+      age,
+      gender,
+      dateOfBirth,
+      bloodType,
+      phoneNumber,
+      email,
+      emergencyContact,
+      allergies,
+      medicalConditions,
+      medications,
+      address
+    } = req.body;
+
+    // Validate required fields
+    if (!abhaId || !fullName || !age || !gender) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: abhaId, fullName, age, gender are required'
+      });
+    }
+
+    // Check if patient with this ABHA ID already exists
+    const existingPatient = await Patient.findOne({ abhaId });
+    if (existingPatient) {
+      return res.status(409).json({
+        success: false,
+        message: 'Patient with this ABHA ID already exists',
+        data: {
+          abhaId: existingPatient.abhaId,
+          name: existingPatient.name
+        }
+      });
+    }
+
+    // Create new patient
+    const patient = new Patient({
+      abhaId: abhaId,
+      name: fullName,
+      age: parseInt(age),
+      gender: gender,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      bloodType: bloodType || '',
+      phone: phoneNumber || '',
+      email: email || '',
+      emergencyContact: emergencyContact || '',
+      allergies: allergies || 'None',
+      medicalConditions: medicalConditions || 'None',
+      medications: medications || 'None',
+      address: address || {},
+      isActive: true
+    });
+
+    await patient.save();
+
+    console.log('Patient created successfully:', patient._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Patient created successfully',
+      data: {
+        patient: {
+          id: patient._id,
+          abhaId: patient.abhaId,
+          name: patient.name,
+          age: patient.age,
+          gender: patient.gender,
+          bloodType: patient.bloodType,
+          phone: patient.phone,
+          email: patient.email,
+          emergencyContact: patient.emergencyContact,
+          allergies: patient.allergies,
+          medicalConditions: patient.medicalConditions,
+          medications: patient.medications,
+          address: patient.address,
+          isActive: patient.isActive,
+          createdAt: patient.createdAt
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating patient with ABHA ID:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating patient',
+      error: error.message
+    });
+  }
+};

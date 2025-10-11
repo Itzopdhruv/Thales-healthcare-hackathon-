@@ -2,6 +2,68 @@ import HealthMetrics from '../models/HealthMetrics.js';
 import Patient from '../models/Patient.js';
 import User from '../models/User.js';
 
+// Helper function to calculate health status based on values
+const calculateHealthStatus = (bloodPressure, heartRate, bloodSugar, weight) => {
+  const status = {
+    bloodPressure: 'Normal',
+    heartRate: 'Normal',
+    bloodSugar: 'Normal',
+    weight: 'Stable'
+  };
+
+  // Blood Pressure Status
+  const systolic = bloodPressure.systolic;
+  const diastolic = bloodPressure.diastolic;
+  if (systolic < 90 || diastolic < 60) {
+    status.bloodPressure = 'Low';
+  } else if (systolic >= 140 || diastolic >= 90) {
+    status.bloodPressure = 'High';
+  } else if (systolic >= 120 || diastolic >= 80) {
+    status.bloodPressure = 'Pre-High';
+  }
+
+  // Heart Rate Status
+  const hr = heartRate.value;
+  if (hr < 60) {
+    status.heartRate = 'Bradycardia';
+  } else if (hr > 100) {
+    status.heartRate = 'Tachycardia';
+  } else if (hr >= 90) {
+    status.heartRate = 'High';
+  } else if (hr <= 70) {
+    status.heartRate = 'Low';
+  }
+
+  // Blood Sugar Status
+  const bs = bloodSugar.value;
+  if (bs < 70) {
+    status.bloodSugar = 'Low';
+  } else if (bs >= 126) {
+    status.bloodSugar = 'Diabetic';
+  } else if (bs >= 100) {
+    status.bloodSugar = 'Pre-Diabetic';
+  } else if (bs >= 90) {
+    status.bloodSugar = 'High';
+  }
+
+  // Weight Status (assuming adult BMI calculation)
+  const w = weight.value;
+  // For simplicity, using basic weight ranges - in real app, would use BMI
+  if (w < 50) {
+    status.weight = 'Underweight';
+  } else if (w > 100) {
+    status.weight = 'Obese';
+  } else if (w > 80) {
+    status.weight = 'Overweight';
+  } else if (w < 60) {
+    status.weight = 'Lost';
+  } else if (w > 70) {
+    status.weight = 'Gained';
+  }
+
+  return status;
+};
+
 // Add new health metrics for a patient
 export const addHealthMetrics = async (req, res) => {
   try {
@@ -59,6 +121,9 @@ export const addHealthMetrics = async (req, res) => {
       });
     }
 
+    // Calculate health status based on values
+    const calculatedStatus = calculateHealthStatus(bloodPressure, heartRate, bloodSugar, weight);
+
     // Create new health metrics record
     const healthMetrics = new HealthMetrics({
       patientId: patient._id,
@@ -79,6 +144,7 @@ export const addHealthMetrics = async (req, res) => {
         value: parseInt(weight.value),
         unit: weight.unit || 'kg'
       },
+      status: calculatedStatus,
       recordedBy: req.user?.id || null, // Make optional for now
       recordedByName: req.user?.name || 'Admin/Doctor',
       notes: notes || ''

@@ -423,12 +423,6 @@ const SimplePatientViewer = () => {
       formData.append('documentType', values.documentType);
       formData.append('title', values.title);
       formData.append('description', values.description || '');
-      // Pass demographics to be stored with Patient (upsert)
-      if (values.patientName) formData.append('patientName', values.patientName);
-      if (values.patientPhone) formData.append('patientPhone', values.patientPhone);
-      if (values.patientAge) formData.append('patientAge', values.patientAge);
-      if (values.patientGender) formData.append('patientGender', values.patientGender);
-      if (values.patientBloodType) formData.append('patientBloodType', values.patientBloodType);
 
       const response = await api.post('/reports/upload', formData, {
         headers: {
@@ -1974,41 +1968,6 @@ const SimplePatientViewer = () => {
                               />
                             </Form.Item>
 
-                            {/* Patient demographics to store with the report */}
-                            <Row gutter={16}>
-                              <Col span={8}>
-                                <Form.Item name="patientName" label="Patient Name">
-                                  <Input placeholder="Full name" />
-                                </Form.Item>
-                              </Col>
-                              <Col span={8}>
-                                <Form.Item name="patientPhone" label="Phone">
-                                  <Input placeholder="10-digit phone" />
-                                </Form.Item>
-                              </Col>
-                              <Col span={8}>
-                                <Form.Item name="patientAge" label="Age">
-                                  <Input placeholder="e.g., 28" />
-                                </Form.Item>
-                              </Col>
-                            </Row>
-                            <Row gutter={16}>
-                              <Col span={12}>
-                                <Form.Item name="patientGender" label="Gender">
-                                  <select style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
-                                    <option value="">Select gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                  </select>
-                                </Form.Item>
-                              </Col>
-                              <Col span={12}>
-                                <Form.Item name="patientBloodType" label="Blood Type">
-                                  <Input placeholder="e.g., AB+" />
-                                </Form.Item>
-                              </Col>
-                            </Row>
 
                             <div style={{
                               padding: '16px',
@@ -2375,15 +2334,26 @@ const SimplePatientViewer = () => {
             label="Entry Type"
             rules={[{ required: true, message: 'Please select an entry type' }]}
           >
-            <Select placeholder="Select entry type">
-              <Option value="consultation">Consultation</Option>
-              <Option value="prescription">Prescription</Option>
-              <Option value="lab_test">Lab Test</Option>
-              <Option value="scan">Scan</Option>
-              <Option value="surgery">Surgery</Option>
-              <Option value="vaccination">Vaccination</Option>
-              <Option value="other">Other</Option>
-            </Select>
+            <select 
+              style={{ 
+                width: '100%', 
+                padding: '8px 12px', 
+                border: '1px solid #d9d9d9', 
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>Select entry type</option>
+              <option value="consultation">Consultation</option>
+              <option value="prescription">Prescription</option>
+              <option value="lab_test">Lab Test</option>
+              <option value="scan">Scan</option>
+              <option value="surgery">Surgery</option>
+              <option value="vaccination">Vaccination</option>
+              <option value="other">Other</option>
+            </select>
           </Form.Item>
 
           <Form.Item

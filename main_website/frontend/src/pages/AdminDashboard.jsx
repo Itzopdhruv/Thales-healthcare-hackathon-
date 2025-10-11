@@ -425,7 +425,7 @@ const AdminDashboard = () => {
       message.destroy(); // Clear loading message
       
       if (result.success) {
-        message.success(`Patient record created successfully! ABHA ID: ${result.data.abhaId}`);
+        message.success(`Patient record created successfully! ABHA ID: ${result.data.patient.abhaId}`);
         setIsCreatePatientVisible(false);
         
         // Reset form and clear generated ABHA ID
