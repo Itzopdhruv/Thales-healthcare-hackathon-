@@ -49,7 +49,6 @@ import meetingRoutes from './routes/meetingRoutes.js';
 import recordingRoutes from './routes/recordingRoutes.js';
 import healthMetricsRoutes from './routes/healthMetrics.js';
 import { summarizeReportWithGemini, testGeminiPrompt } from './services/geminiService.js';
-import WebSocketService from './services/WebSocketService.js';
 import { addMigrationEndpoint } from './utils/migrateJitsiIds.js';
 import { addFixEndpoint } from './utils/fixAppointmentMeetingIds.js';
 
@@ -220,12 +219,6 @@ const PORT = process.env.PORT || 5001;
 // Create HTTP server
 const server = http.createServer(app);
 
-// Initialize WebSocket service
-const webSocketService = new WebSocketService(server);
-
-// Make WebSocket service available globally for use in controllers
-global.webSocketService = webSocketService;
-
 // Add migration endpoint for Jitsi IDs
 addMigrationEndpoint(app);
 
@@ -236,7 +229,6 @@ server.listen(PORT, () => {
   console.log(`🚀 AayuLink Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
-  console.log(`🔌 WebSocket service initialized`);
   
   // Check Google Cloud configuration
   const hasGoogleCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;

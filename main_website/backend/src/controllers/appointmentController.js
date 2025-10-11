@@ -297,11 +297,6 @@ const bookAppointment = async (req, res) => {
       .populate('doctor', 'name specialty consultationFee')
       .populate('specialty', 'name');
 
-    // Emit real-time update
-    if (global.webSocketService) {
-      global.webSocketService.emitAppointmentBooked(populatedAppointment, patient._id);
-    }
-
     res.status(201).json({
       success: true,
       message: 'Appointment booked successfully',
@@ -442,11 +437,6 @@ const cancelAppointment = async (req, res) => {
       });
     } else {
       console.log('❌ Slot not found for appointment:', appointment.slot);
-    }
-
-    // Emit real-time update
-    if (global.webSocketService) {
-      global.webSocketService.emitAppointmentCancelled(appointmentId, appointment.patient, appointment.doctor);
     }
 
     res.json({

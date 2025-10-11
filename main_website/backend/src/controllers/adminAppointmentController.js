@@ -297,11 +297,6 @@ const createAvailabilitySlot = async (req, res) => {
     await slot.save();
     await slot.populate('specialty', 'name');
 
-    // Emit real-time update
-    if (global.webSocketService) {
-      global.webSocketService.emitSlotCreated(slot, doctorId);
-    }
-
     res.status(201).json({
       success: true,
       message: 'Availability slot created successfully',
@@ -340,11 +335,6 @@ const updateSlotAvailability = async (req, res) => {
     slot.isAvailable = isAvailable;
     await slot.save();
 
-    // Emit real-time update
-    if (global.webSocketService) {
-      global.webSocketService.emitSlotAvailabilityChanged(slot._id, isAvailable, slot.doctor);
-    }
-
     res.json({
       success: true,
       message: 'Slot availability updated successfully',
@@ -380,11 +370,6 @@ const deleteAvailabilitySlot = async (req, res) => {
     }
 
     await DoctorAvailabilitySlot.findByIdAndDelete(slotId);
-
-    // Emit real-time update
-    if (global.webSocketService) {
-      global.webSocketService.emitSlotDeleted(slotId, slot.doctor);
-    }
 
     res.json({
       success: true,
@@ -447,11 +432,6 @@ const updateAppointmentStatus = async (req, res) => {
     if (notes) appointment.notes = notes;
     if (meetingLink) appointment.virtualMeetingLink = meetingLink;
     await appointment.save();
-
-    // Emit real-time update
-    if (global.webSocketService) {
-      global.webSocketService.emitAppointmentStatusUpdated(appointmentId, status, appointment.patient, appointment.doctor);
-    }
 
     res.json({
       success: true,
